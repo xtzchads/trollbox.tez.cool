@@ -789,34 +789,6 @@
           messageInput.style.height = "auto";
           cancelReplyToMessage();
 
-          // Fetch new messages and force a render (to see the new message)
-          await axios.get(TZKT_API_URL).then((response) => {
-            const messagesData = response.data;
-            if (messagesData && messagesData.length > 0) {
-              const newMessages = [];
-              messagesData.forEach((item) => {
-                const messageData = item.value;
-                newMessages.push({
-                  id: parseInt(item.key),
-                  text: messageData.message,
-                  sender: messageData.author,
-                  replyTo:
-                    messageData.reply_to !== null
-                      ? { some: parseInt(messageData.reply_to) }
-                      : { none: "" },
-                  timestamp: new Date(messageData.timestamp),
-                });
-              });
-
-              // Sort and update messages
-              newMessages.sort((a, b) => a.id - b.id);
-              messages = newMessages;
-
-              // Force render and scroll to bottom
-              renderMessages();
-            }
-          });
-
           showNotification("Message sent successfully", "success");
         } catch (error) {
           console.error("Error sending message:", error);
@@ -841,6 +813,7 @@
             for (const group of response.data) {
               for (const op of group) {
                 if (op.hash === hash) {
+                  loadMessages();
                   return true;
                 }
               }
