@@ -1,4 +1,552 @@
-async function loadMessages() {
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TezTrollBox</title>
+    <script src="js/moment.min.js"></script>
+    <script src="js/all.min.js"></script>
+    <script src="js/walletbeacon.min.js"></script>
+    <script src="js/axios.min.js"></script>
+    <style>
+      :root {
+        --primary-color: #3390ec;
+        --secondary-color: #eaeaea;
+        --text-color: #333333;
+        --light-text: #999999;
+        --my-message-bg: #e3f2fd;
+        --other-message-bg: #f5f5f5;
+        --hover-color: #f0f0f0;
+        --border-color: #e0e0e0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        color: var(--text-color);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .container {
+        width: 100%; /* Set to a percentage of the viewport */
+        max-width: 800px; /* Cap the maximum width */
+        margin: 0 auto; /* Keep the centering */
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      /* Update chat container to use more horizontal space */
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 100%; /* Ensure it uses full width of container */
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        margin-right: 10px;
+        background-color: #e0e0e0;
+        overflow: hidden;
+      }
+
+      .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
+      }
+
+      .app-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .wallet-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .wallet-address {
+        font-size: 14px;
+        color: var(--light-text);
+        background-color: var(--secondary-color);
+        padding: 8px 12px;
+        border-radius: 20px;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .connect-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .connect-btn:hover {
+        background-color: #2980b9;
+      }
+
+      .message {
+        margin-bottom: 0;
+        max-width: calc(90% - 46px); /* Increased from 70% to 90% */
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      /* Adjust message containers to allow more horizontal space */
+      .message-container {
+        display: flex;
+        margin-bottom: 15px;
+        align-items: flex-start;
+        width: 100%; /* Ensure it uses full width */
+      }
+
+      /* Ensure messages container uses all available space */
+      .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        width: 100%;
+      }
+
+      .message.my-message {
+        margin-left: auto;
+        background-color: var(--my-message-bg);
+        border-radius: 18px 18px 0 18px;
+      }
+
+      .message.other-message {
+        margin-right: auto;
+        background-color: var(--other-message-bg);
+        border-radius: 18px 18px 18px 0;
+      }
+
+      .message:hover {
+        opacity: 0.9;
+      }
+
+      .message-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--light-text);
+        padding: 5px 16px 0 16px;
+      }
+
+      .message-content {
+        padding: 8px 16px 12px 16px;
+        font-size: 15px;
+        word-break: break-word;
+      }
+
+      .message-sender {
+        font-weight: 500;
+      }
+
+      .message-time {
+        margin-left: 5px;
+      }
+
+      .reply-to {
+        background-color: rgba(0, 0, 0, 0.05);
+        border-left: 3px solid var(--primary-color);
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: var(--light-text);
+      }
+
+      .input-container {
+        display: flex;
+        background-color: #f8f8f8;
+        padding: 15px;
+        border-top: 1px solid var(--border-color);
+        position: relative;
+      }
+
+      .reply-preview {
+        top: -60px;
+        left: 0;
+        right: 0;
+        background-color: #f8f8f8;
+        padding: 10px 15px;
+        border-top: 1px solid var(--border-color);
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .reply-preview.show {
+        display: flex;
+      }
+
+      .reply-preview-text {
+        font-size: 14px;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .cancel-reply {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--light-text);
+        font-size: 16px;
+      }
+
+      .message-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        outline: none;
+        font-size: 15px;
+        margin-right: 10px;
+        resize: none;
+        max-height: 150px;
+        min-height: 42px;
+        transition: border-color 0.3s ease;
+      }
+
+      .message-input:focus {
+        border-color: var(--primary-color);
+      }
+
+      .send-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .send-btn:hover {
+        background-color: #2980b9;
+      }
+
+      .send-btn:disabled {
+        background-color: var(--light-text);
+        cursor: not-allowed;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-size: 16px;
+        color: var(--light-text);
+      }
+
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border-left-color: var(--primary-color);
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        transform: translateY(-100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+
+      .notification.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .notification.error {
+        border-left: 4px solid #e53935;
+      }
+
+      .notification.success {
+        border-left: 4px solid #43a047;
+      }
+
+      .notification-content {
+        display: flex;
+        align-items: center;
+      }
+
+      .notification-icon {
+        margin-right: 10px;
+        font-size: 20px;
+      }
+
+      .error .notification-icon {
+        color: #e53935;
+      }
+
+      .success .notification-icon {
+        color: #43a047;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        display: none;
+      }
+
+      .loading-overlay.show {
+        display: flex;
+      }
+
+      .loading-text {
+        margin-top: 15px;
+        font-size: 16px;
+        color: var(--text-color);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="app-title">TezTrollBox</div>
+        <div class="wallet-section">
+          <div class="wallet-address" id="wallet-address"></div>
+          <button class="connect-btn" id="connect-wallet">
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+      <div class="chat-container">
+        <div class="messages-container" id="messages-container">
+          <div class="loading" id="loading-messages">
+            <div class="spinner"></div>
+            <span>Loading messages...</span>
+          </div>
+        </div>
+        <div class="reply-preview" id="reply-preview">
+          <div class="reply-preview-text">
+            <span><i class="fas fa-reply"></i> Replying to: </span>
+            <span id="reply-text"></span>
+          </div>
+          <button class="cancel-reply" id="cancel-reply">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="input-container">
+          <textarea
+            class="message-input"
+            id="message-input"
+            placeholder="Type a message..."
+            rows="1"
+          ></textarea>
+          <button class="send-btn" id="send-btn" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="notification" id="notification">
+      <div class="notification-content">
+        <span class="notification-icon">
+          <i class="fas fa-info-circle"></i>
+        </span>
+        <span id="notification-message"></span>
+      </div>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">
+        Processing transaction...
+      </div>
+    </div>
+
+    <script>
+      // Configuration
+      const CONTRACT_ADDRESS = "KT1Ek4Nxu4XpQykpGLwaNtUJSWKuVpXFUJoy";
+      const NETWORK = "mainnet";
+      const RPC_URL = "https://rpc.tzbeta.net";
+      const TZKT_API_URL =
+        "https://api.tzkt.io/v1/bigmaps/743755/keys";
+
+      // State variables
+      let wallet = null;
+      let userAddress = null;
+      let messages = [];
+      let replyTo = null;
+      let isConnected = false;
+
+      // DOM Elements
+      const connectWalletBtn = document.getElementById("connect-wallet");
+      const walletAddressEl = document.getElementById("wallet-address");
+      const messagesContainer = document.getElementById("messages-container");
+      const messageInput = document.getElementById("message-input");
+      const sendBtn = document.getElementById("send-btn");
+      const loadingMessages = document.getElementById("loading-messages");
+      const replyPreview = document.getElementById("reply-preview");
+      const replyText = document.getElementById("reply-text");
+      const cancelReply = document.getElementById("cancel-reply");
+      const notification = document.getElementById("notification");
+      const notificationMessage = document.getElementById(
+        "notification-message"
+      );
+      const loadingOverlay = document.getElementById("loading-overlay");
+      const loadingText = document.getElementById("loading-text");
+      function setupMessagePolling() {
+        // Initial load
+        loadMessages();
+
+        // Set up interval for polling (every 3 seconds)
+        setInterval(() => {
+          loadMessages();
+        }, 3000);
+      }
+      // Initialize
+      async function init() {
+        setupMessagePolling();
+        // Initialize Beacon SDK
+        const { DAppClient } = beacon;
+
+        wallet = new DAppClient({
+          name: "TezTrollBox",
+          preferredNetwork: NETWORK,
+        });
+
+        // Check if user is already connected
+        const activeAccount = await wallet.getActiveAccount();
+        if (activeAccount) {
+          userAddress = activeAccount.address;
+          walletAddressEl.textContent = shortenAddress(userAddress);
+          connectWalletBtn.textContent = "Disconnect";
+          isConnected = true;
+        }
+
+        // Event listeners
+        connectWalletBtn.addEventListener("click", toggleWalletConnection);
+        messageInput.addEventListener("input", handleInput);
+        sendBtn.addEventListener("click", sendMessage);
+        cancelReply.addEventListener("click", cancelReplyToMessage);
+
+        // Ensure reply preview is initially hidden
+        replyPreview.classList.remove("show");
+
+        // Auto-resize textarea
+        messageInput.addEventListener("input", function () {
+          this.style.height = "auto";
+          this.style.height = this.scrollHeight + "px";
+        });
+      }
+
+      // Toggle wallet connection
+      // Toggle wallet connection
+      async function toggleWalletConnection() {
+        if (isConnected) {
+          // Disconnect wallet
+          await wallet.clearActiveAccount();
+          userAddress = null;
+          walletAddressEl.textContent = "";
+          connectWalletBtn.textContent = "Connect Wallet";
+          isConnected = false;
+          handleInput();
+          messagesContainer.innerHTML =
+            '<div class="loading" id="loading-messages"><div class="spinner"></div><span>Loading messages...</span></div>';
+          loadingMessages.style.display = "flex";
+        } else {
+          // Connect wallet
+          try {
+            const permissions = await wallet.requestPermissions({
+              network: {
+                type: NETWORK,
+              },
+            });
+            userAddress = permissions.address;
+            walletAddressEl.textContent = shortenAddress(userAddress);
+            connectWalletBtn.textContent = "Disconnect";
+            isConnected = true;
+            handleInput();
+            // Re-render messages to apply correct styles
+            renderMessages();
+          } catch (error) {
+            showNotification(
+              "Failed to connect wallet: " + error.message,
+              "error"
+            );
+          }
+        }
+      }
+
+      // Load messages from contract
+      async function loadMessages() {
   try {
     // Only show loading indicator on initial load (when no messages are displayed)
     if (
@@ -62,3 +610,303 @@ async function loadMessages() {
     loadingMessages.style.display = "none";
   }
 }
+
+      // Render messages in the UI
+      // Render messages in the UI
+      function renderMessages() {
+        messagesContainer.innerHTML = "";
+
+        if (messages.length === 0) {
+          const emptyState = document.createElement("div");
+          emptyState.className = "loading";
+          emptyState.innerHTML =
+            "No messages yet. Be the first to send a message!";
+          messagesContainer.appendChild(emptyState);
+          return;
+        }
+
+        messages.forEach((message) => {
+          const messageContainer = document.createElement("div");
+          messageContainer.className = "message-container";
+
+          const isMyMessage = isConnected && message.sender === userAddress;
+
+          // Create avatar element
+          const avatarEl = document.createElement("div");
+          avatarEl.className = "avatar";
+
+          // Only show avatar for other people's messages
+          if (!isMyMessage) {
+            const avatarImg = document.createElement("img");
+            avatarImg.src =
+              "https://services.tzkt.io/v1/avatars/" + message.sender; // Default placeholder
+            avatarImg.alt = "avatar";
+            avatarEl.appendChild(avatarImg);
+
+            messageContainer.appendChild(avatarEl);
+          }
+
+          // Create message element
+          const messageEl = document.createElement("div");
+          messageEl.className = `message ${
+            isMyMessage ? "my-message" : "other-message"
+          }`;
+          messageEl.dataset.id = message.id;
+
+          let html = "";
+
+          // Add sender at the top
+          html += `<div class="message-info">
+          <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
+          <span class="message-time">${formatTime(message.timestamp)}</span>
+      </div>`;
+
+          // Add reply content if it's a reply
+          if (message.replyTo && message.replyTo.some !== undefined) {
+            const replyId = parseInt(message.replyTo.some);
+            const replyMessage = messages.find((m) => m.id === replyId);
+
+            if (replyMessage) {
+              html += `<div class="reply-to">
+            <div class="reply-sender">${shortenAddress(
+              replyMessage.sender
+            )}</div>
+            <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
+          </div>`;
+            }
+          }
+
+          // Add message content
+          html += `<div class="message-content">${escapeHTML(
+            message.text
+          )}</div>`;
+
+          messageEl.innerHTML = html;
+
+          // Add click event for reply functionality
+          if (isConnected) {
+            messageEl.addEventListener("click", function () {
+              const messageId = parseInt(this.dataset.id);
+              replyToMessage(messageId);
+            });
+          }
+
+          // Add message to container
+          messageContainer.appendChild(messageEl);
+
+          // For my messages, add avatar at the end
+          if (isMyMessage) {
+            const avatarImg = document.createElement("img");
+            avatarImg.src =
+              "https://services.tzkt.io/v1/avatars/" + message.sender; // Default placeholder
+            avatarImg.alt = "avatar";
+            avatarEl.appendChild(avatarImg);
+
+            // Try to fetch the actual avatar
+
+            messageContainer.appendChild(avatarEl);
+          }
+
+          messagesContainer.appendChild(messageContainer);
+        });
+
+        // Scroll to bottom on initial render only
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // Reply to a message
+      function replyToMessage(messageId) {
+        const message = messages.find((m) => m.id === messageId);
+        if (message) {
+          replyTo = messageId;
+          replyText.textContent =
+            message.text.substring(0, 30) +
+            (message.text.length > 30 ? "..." : "");
+          replyPreview.classList.add("show");
+          messageInput.focus();
+
+          // Debug - Make sure this function is actually being called
+          console.log("Replying to message:", messageId, message.text);
+        } else {
+          console.error("Message not found:", messageId);
+        }
+      }
+
+      // Cancel reply to message
+      function cancelReplyToMessage() {
+        replyTo = null;
+        replyPreview.classList.remove("show");
+      }
+
+      async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !isConnected) return;
+
+        try {
+          showLoading("Sending message...");
+
+          // Prepare message parameters
+          let replyToValue;
+          if (replyTo !== null && replyTo !== undefined) {
+            // When there is a reply_to value, format it as Some(nat)
+            replyToValue = {
+              prim: "Some",
+              args: [{ int: replyTo.toString() }],
+            };
+          } else {
+            // When there is no reply_to value, format it as None
+            replyToValue = { prim: "None" };
+          }
+
+          // Prepare the transaction
+          const params = {
+            kind: beacon.TezosOperationType.TRANSACTION,
+            source: userAddress,
+            destination: CONTRACT_ADDRESS,
+            amount: "0",
+            parameters: {
+              entrypoint: "post_message", // Use the actual entry point name from your contract
+              value: {
+                prim: "Pair",
+                args: [
+                  { string: text }, // message parameter
+                  replyToValue, // reply_to parameter (option type)
+                ],
+              },
+            },
+          };
+
+          // Send the transaction
+          const op = await wallet.requestOperation({
+            operationDetails: [params],
+          });
+
+          // Wait for confirmation
+          await waitForConfirmation(op.transactionHash);
+
+          // Clear input
+          messageInput.value = "";
+          messageInput.style.height = "auto";
+          cancelReplyToMessage();
+
+          // Fetch new messages and force a render (to see the new message)
+          await axios.get(TZKT_API_URL).then((response) => {
+            const messagesData = response.data;
+            if (messagesData && messagesData.length > 0) {
+              const newMessages = [];
+              messagesData.forEach((item) => {
+                const messageData = item.value;
+                newMessages.push({
+                  id: parseInt(item.key),
+                  text: messageData.message,
+                  sender: messageData.author,
+                  replyTo:
+                    messageData.reply_to !== null
+                      ? { some: parseInt(messageData.reply_to) }
+                      : { none: "" },
+                  timestamp: new Date(messageData.timestamp),
+                });
+              });
+
+              // Sort and update messages
+              newMessages.sort((a, b) => a.id - b.id);
+              messages = newMessages;
+
+              // Force render and scroll to bottom
+              renderMessages();
+            }
+          });
+
+          showNotification("Message sent successfully", "success");
+        } catch (error) {
+          console.error("Error sending message:", error);
+          showNotification(
+            "Failed to send message: " + (error.message || "Unknown error"),
+            "error"
+          );
+        } finally {
+          hideLoading();
+        }
+      }
+
+      // Wait for transaction confirmation
+      async function waitForConfirmation(hash, attempts = 10) {
+        for (let i = 0; i < attempts; i++) {
+          try {
+            const response = await axios.get(
+              `${RPC_URL}/chains/main/blocks/head/operations`
+            );
+            const operations = response.data.flatMap((group) => group);
+
+            for (const group of response.data) {
+              for (const op of group) {
+                if (op.hash === hash) {
+                  return true;
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error checking confirmation:", error);
+          }
+
+          // Wait for 5 seconds before next attempt
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
+
+        // If we've waited long enough, assume it's confirmed
+        return true;
+      }
+
+      // Handle input changes
+      function handleInput() {
+        const text = messageInput.value.trim();
+        sendBtn.disabled = !text || !isConnected;
+      }
+
+      // Show notification
+      function showNotification(message, type = "info") {
+        notificationMessage.textContent = message;
+        notification.className = `notification ${type} show`;
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+          notification.classList.remove("show");
+        }, 3000);
+      }
+
+      // Show loading overlay
+      function showLoading(text) {
+        loadingText.textContent = text || "Processing...";
+        loadingOverlay.classList.add("show");
+      }
+
+      // Hide loading overlay
+      function hideLoading() {
+        loadingOverlay.classList.remove("show");
+      }
+
+      // Utility: Format time
+      function formatTime(date) {
+        return moment(date).format("MMM DD, HH:mm");
+      }
+
+      // Utility: Shorten address
+      function shortenAddress(address) {
+        return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+      }
+
+      // Utility: Escape HTML
+      function escapeHTML(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      // Initialize on load
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
