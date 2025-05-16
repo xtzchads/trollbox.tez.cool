@@ -36,9 +36,9 @@
       }
 
       .container {
-        width: 100%; /* Set to a percentage of the viewport */
-        max-width: 800px; /* Cap the maximum width */
-        margin: 0 auto; /* Keep the centering */
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
         padding: 20px;
         flex: 1;
         display: flex;
@@ -46,7 +46,6 @@
         height: 100%;
       }
 
-      /* Update chat container to use more horizontal space */
       .chat-container {
         display: flex;
         flex-direction: column;
@@ -55,7 +54,7 @@
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         overflow: hidden;
-        max-width: 100%; /* Ensure it uses full width of container */
+        max-width: 100%;
       }
 
       .avatar {
@@ -124,21 +123,19 @@
 
       .message {
         margin-bottom: 0;
-        max-width: calc(90% - 46px); /* Increased from 70% to 90% */
+        max-width: calc(90% - 46px);
         position: relative;
         cursor: pointer;
         transition: background-color 0.2s ease;
       }
 
-      /* Adjust message containers to allow more horizontal space */
       .message-container {
         display: flex;
         margin-bottom: 15px;
         align-items: flex-start;
-        width: 100%; /* Ensure it uses full width */
+        width: 100%;
       }
 
-      /* Ensure messages container uses all available space */
       .messages-container {
         flex: 1;
         overflow-y: auto;
@@ -372,6 +369,135 @@
         font-size: 16px;
         color: var(--text-color);
       }
+
+      /* New styles for emoji and GIF functionality */
+      .input-toolbar {
+        display: flex;
+        margin-bottom: 10px;
+      }
+
+      .toolbar-btn {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--light-text);
+        cursor: pointer;
+        margin-right: 15px;
+        transition: color 0.2s ease;
+      }
+
+      .toolbar-btn:hover {
+        color: var(--primary-color);
+      }
+
+      .toolbar-btn.active {
+        color: var(--primary-color);
+      }
+
+      .emoji-picker, .gif-picker {
+        position: absolute;
+        bottom: 70px;
+        left: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 10px;
+        z-index: 10;
+        display: none;
+        max-width: 320px;
+        height: 300px;
+        overflow-y: auto;
+      }
+
+      .emoji-picker.show, .gif-picker.show {
+        display: block;
+      }
+
+      .emoji-categories {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+      }
+
+      .emoji-category {
+        font-size: 16px;
+        margin-right: 10px;
+        cursor: pointer;
+        color: var(--light-text);
+      }
+
+      .emoji-category.active {
+        color: var(--primary-color);
+      }
+
+      .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 5px;
+      }
+
+      .emoji {
+        font-size: 20px;
+        cursor: pointer;
+        text-align: center;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+      }
+
+      .emoji:hover {
+        background-color: var(--hover-color);
+      }
+
+      .gif-search {
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      .gif-search input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .gif-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .gif-item {
+        cursor: pointer;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .gif-item img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .gif-item:hover::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.2);
+      }
+
+      .message img.gif-content {
+        max-width: 100%;
+        border-radius: 4px;
+        margin-top: 5px;
+      }
     </style>
   </head>
   <body>
@@ -402,15 +528,57 @@
           </button>
         </div>
         <div class="input-container">
-          <textarea
-            class="message-input"
-            id="message-input"
-            placeholder="Type a message..."
-            rows="1"
-          ></textarea>
-          <button class="send-btn" id="send-btn" disabled>
-            <i class="fas fa-paper-plane"></i>
-          </button>
+          <div style="width: 100%;">
+            <div class="input-toolbar">
+              <button class="toolbar-btn" id="emoji-btn" title="Emoji">
+                <i class="far fa-smile"></i>
+              </button>
+              <button class="toolbar-btn" id="gif-btn" title="GIF">
+                <i class="fas fa-film"></i>
+              </button>
+            </div>
+            <div style="display: flex;">
+              <textarea
+                class="message-input"
+                id="message-input"
+                placeholder="Type a message..."
+                rows="1"
+              ></textarea>
+              <button class="send-btn" id="send-btn" disabled>
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Emoji Picker -->
+          <div class="emoji-picker" id="emoji-picker">
+            <div class="emoji-categories">
+              <div class="emoji-category active" data-category="recent">🕒</div>
+              <div class="emoji-category" data-category="smileys">😀</div>
+              <div class="emoji-category" data-category="people">👋</div>
+              <div class="emoji-category" data-category="animals">🐶</div>
+              <div class="emoji-category" data-category="food">🍎</div>
+              <div class="emoji-category" data-category="travel">✈️</div>
+              <div class="emoji-category" data-category="activities">⚽</div>
+              <div class="emoji-category" data-category="objects">💡</div>
+              <div class="emoji-category" data-category="symbols">❤️</div>
+              <div class="emoji-category" data-category="flags">🏁</div>
+            </div>
+            <div class="emoji-grid" id="emoji-grid"></div>
+          </div>
+          
+          <!-- GIF Picker -->
+          <div class="gif-picker" id="gif-picker">
+            <div class="gif-search">
+              <input type="text" id="gif-search" placeholder="Search GIFs...">
+            </div>
+            <div class="gif-grid" id="gif-grid">
+              <div class="loading" id="loading-gifs" style="display: none;">
+                <div class="spinner"></div>
+                <span>Loading GIFs...</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
