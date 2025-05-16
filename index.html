@@ -1454,9 +1454,46 @@ function renderMessages() {
   });
   
   // Scroll to bottom on initial render only
-  if (!initialLoadComplete) {
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  initialLoadComplete = true;
+if (!initialLoadComplete) {
+  // Find all GIF images in the messages
+  const gifImages = messagesContainer.querySelectorAll('.gif-content');
+  
+  if (gifImages.length > 0) {
+    // Wait for all GIFs to load before scrolling
+    let loadedCount = 0;
+    
+    gifImages.forEach(img => {
+      if (img.complete) {
+        loadedCount++;
+        // If all images are loaded, scroll down
+        if (loadedCount === gifImages.length) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          initialLoadComplete = true;
+        }
+      } else {
+        img.addEventListener('load', () => {
+          loadedCount++;
+          // If all images are loaded, scroll down
+          if (loadedCount === gifImages.length) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            initialLoadComplete = true;
+          }
+        });
+      }
+    });
+    
+    // Also set a timeout in case some images fail to load
+    setTimeout(() => {
+      if (!initialLoadComplete) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        initialLoadComplete = true;
+      }
+    }, 2000);
+  } else {
+    // No GIFs, scroll immediately
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    initialLoadComplete = true;
+  }
 }
 }
 
