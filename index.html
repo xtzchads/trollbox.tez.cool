@@ -1181,8 +1181,8 @@
           query !== "trending"
             ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
                 query
-              )}&limit=12&rating=pg-13`
-            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=pg-13`;
+              )}&limit=100`
+            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=100`;
 
         // Fetch GIFs from Giphy
         fetch(endpoint)
