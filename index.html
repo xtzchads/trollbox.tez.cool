@@ -1186,19 +1186,19 @@
     })
     .then((data) => {
       loadingGifs.style.display = "none";
-      if (data.data && data.data.length > 0) {
-        data.data.forEach((gif) => {
+      if (data.results && data.results.length > 0) {
+        data.results.forEach((gif) => {
           const gifItem = document.createElement("div");
           gifItem.className = "gif-item";
           // Use downsized format for preview (smaller/faster)
           const img = document.createElement("img");
-          img.src = gif.images.downsized.url;
+          img.src = gif.media_formats.tinygif.url;
           img.alt = gif.title || "GIF";
           img.loading = "lazy"; // Lazy loading for better performance
           gifItem.appendChild(img);
           gifItem.addEventListener("click", () => {
             // When clicked, insert the original GIF URL
-            insertGif(gif.images.original.url);
+            insertGif(gif.media_formats.gif.url);
           });
           gifGrid.appendChild(gifItem);
         });
