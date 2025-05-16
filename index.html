@@ -1375,7 +1375,7 @@ function renderMessages() {
         if (isGifRep) {
       html += `<div class="reply-content">
         <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
-      </div>`;
+      </div></div>`;
     } else {
       html += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
     }
