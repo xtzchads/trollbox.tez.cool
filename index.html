@@ -1166,67 +1166,58 @@
         gifBtn.classList.remove("active");
       }
 
-      // Search for GIFs using Tenor API (you would need to get your own API key)
       function searchGifs() {
-        const query = gifSearch.value.trim() || "trending";
-        loadingGifs.style.display = "flex";
-        gifGrid.innerHTML = "";
-
-        // Use Giphy API
-        // Public API key - for development only (rate limited)
-        const GIPHY_API_KEY = "UNWOXL0im1L6CqVuYcxBZMOvUWO5MX4A";
-
-        // Endpoint - search if query exists, otherwise get trending
-        const endpoint =
-          query !== "trending"
-            ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
-                query
-              )}&limit=100`
-            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=100`;
-
-        // Fetch GIFs from Giphy
-        fetch(endpoint)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          })
-          .then((data) => {
-            loadingGifs.style.display = "none";
-
-            if (data.data && data.data.length > 0) {
-              data.data.forEach((gif) => {
-                const gifItem = document.createElement("div");
-                gifItem.className = "gif-item";
-
-                // Use downsized format for preview (smaller/faster)
-                const img = document.createElement("img");
-                img.src = gif.images.downsized.url;
-                img.alt = gif.title || "GIF";
-                img.loading = "lazy"; // Lazy loading for better performance
-
-                gifItem.appendChild(img);
-                gifItem.addEventListener("click", () => {
-                  // When clicked, insert the original GIF URL
-                  insertGif(gif.images.original.url);
-                });
-
-                gifGrid.appendChild(gifItem);
-              });
-            } else {
-              // No results
-              gifGrid.innerHTML =
-                '<div style="text-align: center; width: 100%; padding: 20px;">No GIFs found. Try a different search term.</div>';
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching GIFs:", error);
-            loadingGifs.style.display = "none";
-            gifGrid.innerHTML =
-              '<div style="text-align: center; width: 100%; padding: 20px;">Error loading GIFs. Please try again.</div>';
-          });
+  const query = gifSearch.value.trim() || "trending";
+  loadingGifs.style.display = "flex";
+  gifGrid.innerHTML = "";
+  
+  // Your Cloudflare Worker URL
+  const WORKER_URL = "/fetchgif";
+  
+  // Build the endpoint URL for your worker
+  const endpoint = query !== "trending"
+    ? `${WORKER_URL}?type=search&q=${encodeURIComponent(query)}&limit=100`
+    : `${WORKER_URL}?type=trending&limit=100`;
+  
+  // Fetch GIFs through your Cloudflare Worker
+  fetch(endpoint)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
+      return response.json();
+    })
+    .then((data) => {
+      loadingGifs.style.display = "none";
+      if (data.data && data.data.length > 0) {
+        data.data.forEach((gif) => {
+          const gifItem = document.createElement("div");
+          gifItem.className = "gif-item";
+          // Use downsized format for preview (smaller/faster)
+          const img = document.createElement("img");
+          img.src = gif.images.downsized.url;
+          img.alt = gif.title || "GIF";
+          img.loading = "lazy"; // Lazy loading for better performance
+          gifItem.appendChild(img);
+          gifItem.addEventListener("click", () => {
+            // When clicked, insert the original GIF URL
+            insertGif(gif.images.original.url);
+          });
+          gifGrid.appendChild(gifItem);
+        });
+      } else {
+        // No results
+        gifGrid.innerHTML =
+          '<div style="text-align: center; width: 100%; padding: 20px;">No GIFs found. Try a different search term.</div>';
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching GIFs:", error);
+      loadingGifs.style.display = "none";
+      gifGrid.innerHTML =
+        '<div style="text-align: center; width: 100%; padding: 20px;">Error loading GIFs. Please try again.</div>';
+    });
+}
 
       // Utility: Debounce function to limit API calls
       function debounce(func, delay) {
