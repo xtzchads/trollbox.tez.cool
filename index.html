@@ -1347,118 +1347,114 @@
 
       // Render messages in the UI
       // Render messages in the UI
-      function renderMessages() {
-        messagesContainer.innerHTML = "";
+function renderMessages() {
+  messagesContainer.innerHTML = "";
+  if (messages.length === 0) {
+    const emptyState = document.createElement("div");
+    emptyState.className = "loading";
+    emptyState.innerHTML = "No messages yet. Be the first to send a message!";
+    messagesContainer.appendChild(emptyState);
+    return;
+  }
 
-        if (messages.length === 0) {
-          const emptyState = document.createElement("div");
-          emptyState.className = "loading";
-          emptyState.innerHTML =
-            "No messages yet. Be the first to send a message!";
-          messagesContainer.appendChild(emptyState);
-          return;
-        }
-
-        messages.forEach((message) => {
-          const messageContainer = document.createElement("div");
-          messageContainer.className = "message-container";
-
-          const isMyMessage = isConnected && message.sender === userAddress;
-
-          // Create avatar element
-          const avatarEl = document.createElement("div");
-          avatarEl.className = "avatar";
-
-          // Only show avatar for other people's messages
-          if (!isMyMessage) {
-            const avatarImg = document.createElement("img");
-            avatarImg.src =
-              "https://services.tzkt.io/v1/avatars/" + message.sender;
-            avatarImg.alt = "avatar";
-            avatarEl.appendChild(avatarImg);
-
-            messageContainer.appendChild(avatarEl);
-          }
-
-          // Create message element
-          const messageEl = document.createElement("div");
-          messageEl.className = `message ${
-            isMyMessage ? "my-message" : "other-message"
-          }`;
-          messageEl.dataset.id = message.id;
-
-          let html = "";
-
-          // Add sender at the top
-          html += `<div class="message-info">
-      <span class="message-sender">${escapeHTML(
-        shortenAddress(message.sender)
-      )}</span>
+  messages.forEach((message) => {
+    const messageContainer = document.createElement("div");
+    messageContainer.className = "message-container";
+    const isMyMessage = isConnected && message.sender === userAddress;
+    
+    // Create message element
+    const messageEl = document.createElement("div");
+    messageEl.className = `message ${isMyMessage ? "my-message" : "other-message"}`;
+    messageEl.dataset.id = message.id;
+    
+    // Build message HTML content
+    let html = "";
+    // Add sender at the top
+    html += `<div class="message-info">
+      <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
       <span class="message-time">${formatTime(message.timestamp)}</span>
     </div>`;
-
-          // Add reply content if it's a reply
-          if (message.replyTo && message.replyTo.some !== undefined) {
-            const replyId = parseInt(message.replyTo.some);
-            const replyMessage = messages.find((m) => m.id === replyId);
-
-            if (replyMessage) {
-              html += `<div class="reply-to">
-          <div class="reply-sender">${escapeHTML(
-            shortenAddress(replyMessage.sender)
-          )}</div>
+    
+    // Add reply content if it's a reply
+    if (message.replyTo && message.replyTo.some !== undefined) {
+      const replyId = parseInt(message.replyTo.some);
+      const replyMessage = messages.find((m) => m.id === replyId);
+      if (replyMessage) {
+        html += `<div class="reply-to">
+          <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>
           <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
         </div>`;
-            }
-          }
-
-          // Check if the message is a GIF URL
-          const isGif =
-            (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !==
-            null) || (message.text.match(/^https:\/\/media\.tenor\.com\//) !==
-            null);
-
-          // Add message content
-          if (isGif) {
-            html += `<div class="message-content">
+      }
+    }
+    
+    // Check if the message is a GIF URL
+    const isGif = 
+      (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
+      (message.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
+    
+    // Add message content
+    if (isGif) {
+      html += `<div class="message-content">
         <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
       </div>`;
-          } else {
-            html += `<div class="message-content">${escapeHTML(
-              message.text
-            )}</div>`;
-          }
+    } else {
+      html += `<div class="message-content">${escapeHTML(message.text)}</div>`;
+    }
+    
+    messageEl.innerHTML = html;
+    
+    // Add click event for reply functionality
+    if (isConnected) {
+      messageEl.addEventListener("click", function() {
+        const messageId = parseInt(this.dataset.id);
+        replyToMessage(messageId);
+      });
+    }
 
-          messageEl.innerHTML = html;
+    // Create avatar element - reused for both my messages and other messages
+    const createAvatar = () => {
+      const avatarEl = document.createElement("div");
+      avatarEl.className = "avatar";
+      
+      const avatarLink = document.createElement("a");
+      avatarLink.href = "https://tzkt.io/" + message.sender;
+      avatarLink.target = "_blank";
+      
+      const avatarImg = document.createElement("img");
+      avatarImg.src = "https://services.tzkt.io/v1/avatars/" + message.sender;
+      avatarImg.alt = "avatar";
+      
+      // Prevent triggering message reply when clicking the avatar
+      avatarLink.addEventListener("click", function(event) {
+        event.stopPropagation();
+      });
+      
+      avatarLink.appendChild(avatarImg);
+      avatarEl.appendChild(avatarLink);
+      
+      return avatarEl;
+    };
 
-          // Add click event for reply functionality
-          if (isConnected) {
-            messageEl.addEventListener("click", function () {
-              const messageId = parseInt(this.dataset.id);
-              replyToMessage(messageId);
-            });
-          }
-
-          // Add message to container
-          messageContainer.appendChild(messageEl);
-
-          // For my messages, add avatar at the end
-          if (isMyMessage) {
-            const avatarImg = document.createElement("img");
-            avatarImg.src =
-              "https://services.tzkt.io/v1/avatars/" + message.sender;
-            avatarImg.alt = "avatar";
-            avatarEl.appendChild(avatarImg);
-
-            messageContainer.appendChild(avatarEl);
-          }
-
-          messagesContainer.appendChild(messageContainer);
-        });
-
-        // Scroll to bottom on initial render only
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
+    // Place avatars differently based on message owner
+    if (!isMyMessage) {
+      // For other people's messages, avatar goes first
+      messageContainer.appendChild(createAvatar());
+    }
+    
+    // Add message to container
+    messageContainer.appendChild(messageEl);
+    
+    // For my messages, avatar goes last
+    if (isMyMessage) {
+      messageContainer.appendChild(createAvatar());
+    }
+    
+    messagesContainer.appendChild(messageContainer);
+  });
+  
+  // Scroll to bottom on initial render only
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
 
       // Reply to a message
       function replyToMessage(messageId) {
