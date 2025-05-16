@@ -752,8 +752,9 @@
 
           // Prepare the transaction
           const params = {
-            kind: "transaction",
-            to: CONTRACT_ADDRESS,
+            kind: beacon.TezosOperationType.TRANSACTION,
+            source: permissions.address,
+            destination: CONTRACT_ADDRESS,
             amount: "0",
             parameter: {
               entrypoint: "post_message", // Use the actual entry point name from your contract
