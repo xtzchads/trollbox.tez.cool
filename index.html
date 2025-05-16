@@ -613,6 +613,7 @@
       let messages = [];
       let replyTo = null;
       let isConnected = false;
+      let initialLoadComplete = false;
 
       // DOM Elements
       const connectWalletBtn = document.getElementById("connect-wallet");
@@ -1453,7 +1454,10 @@ function renderMessages() {
   });
   
   // Scroll to bottom on initial render only
+  if (!initialLoadComplete) {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  initialLoadComplete = true;
+}
 }
 
       // Reply to a message
