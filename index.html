@@ -8,7 +8,6 @@
     <script src="js/all.min.js"></script>
     <script src="js/walletbeacon.min.js"></script>
     <script src="js/axios.min.js"></script>
-
     <style>
       :root {
         --primary-color: #3390ec;
@@ -555,7 +554,7 @@
 
           <!-- Emoji Picker -->
           <div class="emoji-picker" id="emoji-picker">
-            <!--<div class="emoji-categories">
+            <div class="emoji-categories">
               <div class="emoji-category active" data-category="recent">🕒</div>
               <div class="emoji-category" data-category="smileys">😀</div>
               <div class="emoji-category" data-category="people">👋</div>
@@ -566,7 +565,7 @@
               <div class="emoji-category" data-category="objects">💡</div>
               <div class="emoji-category" data-category="symbols">❤️</div>
               <div class="emoji-category" data-category="flags">🏁</div>
-            </div>-->
+            </div>
             <div class="emoji-grid" id="emoji-grid"></div>
           </div>
 
@@ -640,15 +639,7 @@
       );
       const loadingOverlay = document.getElementById("loading-overlay");
       const loadingText = document.getElementById("loading-text");
-      document.querySelectorAll(".emoji-category").forEach((category) => {
-        category.addEventListener("click", function () {
-          document
-            .querySelector(".emoji-category.active")
-            .classList.remove("active");
-          this.classList.add("active");
-          loadEmojis(this.dataset.category);
-        });
-      });
+
       function setupMessagePolling() {
         // Initial load
         loadMessages();
@@ -689,7 +680,11 @@
         document.addEventListener("click", handleOutsideClick);
         // Ensure reply preview is initially hidden
         replyPreview.classList.remove("show");
-
+        document.querySelectorAll(".emoji-category").forEach((category) => {
+          category.addEventListener("click", function () {
+            loadEmojis(this.dataset.category);
+          });
+        });
         // Auto-resize textarea
         messageInput.addEventListener("input", function () {
           this.style.height = "auto";
@@ -697,84 +692,389 @@
         });
       }
       function initEmojiPicker() {
-        const commonEmojis = [
-          "😀",
-          "😃",
-          "😄",
-          "😁",
-          "😆",
-          "😅",
-          "😂",
-          "🤣",
-          "😊",
-          "😇",
-          "🙂",
-          "🙃",
-          "😉",
-          "😌",
-          "😍",
-          "🥰",
-          "😘",
-          "😗",
-          "😙",
-          "😚",
-          "😋",
-          "😛",
-          "😝",
-          "😜",
-          "🤪",
-          "🤨",
-          "🧐",
-          "🤓",
-          "😎",
-          "🤩",
-          "👍",
-          "👎",
-          "👏",
-          "🙌",
-          "👋",
-          "🤝",
-          "👊",
-          "✌️",
-          "🤞",
-          "🤟",
-          "❤️",
-          "🧡",
-          "💛",
-          "💚",
-          "💙",
-          "💜",
-          "🖤",
-          "💔",
-          "❣️",
-          "💕",
-          "😢",
-          "😭",
-          "😤",
-          "😠",
-          "😡",
-          "🤬",
-          "🤯",
-          "😳",
-          "🥵",
-          "🥶",
-        ];
+        // Initialize with the default category (recent/common)
+        loadEmojis("recent");
+      }
 
+      // Load emojis by category
+      function loadEmojis(category) {
+        const emojiSets = {
+          recent: [
+            "😀",
+            "😃",
+            "😄",
+            "😁",
+            "😆",
+            "😅",
+            "😂",
+            "🤣",
+            "😊",
+            "😇",
+            "🙂",
+            "🙃",
+            "😉",
+            "😌",
+            "😍",
+            "🥰",
+            "😘",
+            "😗",
+            "😙",
+            "😚",
+            "😋",
+            "😛",
+            "😝",
+            "😜",
+            "🤪",
+            "🤨",
+            "🧐",
+            "🤓",
+            "😎",
+            "🤩",
+            "👍",
+            "👎",
+            "👏",
+            "🙌",
+          ],
+          smileys: [
+            "😀",
+            "😃",
+            "😄",
+            "😁",
+            "😆",
+            "😅",
+            "😂",
+            "🤣",
+            "☺️",
+            "😊",
+            "😇",
+            "🙂",
+            "🙃",
+            "😉",
+            "😌",
+            "😍",
+            "🥰",
+            "😘",
+            "😗",
+            "😙",
+            "😚",
+            "😋",
+            "😛",
+            "😝",
+            "😜",
+            "🤪",
+            "🤨",
+            "🧐",
+            "🤓",
+            "😎",
+            "🤩",
+            "🥳",
+            "😏",
+            "😒",
+            "😞",
+            "😔",
+            "😟",
+            "😕",
+            "🙁",
+            "☹️",
+            "😣",
+            "😖",
+            "😫",
+            "😩",
+            "🥺",
+            "😢",
+            "😭",
+            "😤",
+            "😠",
+            "😡",
+            "🤬",
+            "🤯",
+            "😳",
+            "🥵",
+            "🥶",
+            "😱",
+            "😨",
+            "😰",
+            "😥",
+            "😓",
+          ],
+          people: [
+            "👋",
+            "🤚",
+            "🖐",
+            "✋",
+            "🖖",
+            "👌",
+            "🤌",
+            "🤏",
+            "✌️",
+            "🤞",
+            "🤟",
+            "🤘",
+            "🤙",
+            "👈",
+            "👉",
+            "👆",
+            "🖕",
+            "👇",
+            "☝️",
+            "👍",
+            "👎",
+            "✊",
+            "👊",
+            "🤛",
+            "🤜",
+            "👏",
+            "🙌",
+            "👐",
+            "🤲",
+            "🤝",
+            "🙏",
+            "✍️",
+            "💅",
+            "🤳",
+            "💪",
+            "🦾",
+            "🦵",
+            "🦿",
+            "🦶",
+            "👂",
+            "🦻",
+            "👃",
+            "🫀",
+            "🫁",
+            "🧠",
+            "🦷",
+            "🦴",
+            "👀",
+            "👁",
+            "👅",
+          ],
+          animals: [
+            "🐶",
+            "🐱",
+            "🐭",
+            "🐹",
+            "🐰",
+            "🦊",
+            "🐻",
+            "🐼",
+            "🐻‍❄️",
+            "🐨",
+            "🐯",
+            "🦁",
+            "🐮",
+            "🐷",
+            "🐽",
+            "🐸",
+            "🐵",
+            "🙈",
+            "🙉",
+            "🙊",
+            "🐒",
+            "🐔",
+            "🐧",
+            "🐦",
+            "🐤",
+            "🐣",
+            "🐥",
+            "🦆",
+            "🦅",
+            "🦉",
+            "🦇",
+            "🐺",
+            "🐗",
+            "🐴",
+            "🦄",
+            "🐝",
+            "🪱",
+            "🐛",
+            "🦋",
+            "🐌",
+          ],
+          food: [
+            "🍎",
+            "🍐",
+            "🍊",
+            "🍋",
+            "🍌",
+            "🍉",
+            "🍇",
+            "🍓",
+            "🫐",
+            "🍈",
+            "🍒",
+            "🍑",
+            "🥭",
+            "🍍",
+            "🥥",
+            "🥝",
+            "🍅",
+            "🍆",
+            "🥑",
+            "🥦",
+            "🥬",
+            "🥒",
+            "🌶",
+            "🫑",
+            "🌽",
+            "🥕",
+            "🫒",
+            "🧄",
+            "🧅",
+            "🥔",
+            "🍠",
+            "🥐",
+            "🥯",
+            "🍞",
+            "🥖",
+            "🥨",
+            "🧀",
+            "🥚",
+            "🍳",
+            "🧈",
+          ],
+          travel: [
+            "✈️",
+            "🛫",
+            "🛬",
+            "💺",
+            "🚀",
+            "🛸",
+            "🚁",
+            "🛶",
+            "⛵️",
+            "🚤",
+            "🛥",
+            "🛳",
+            "⛴",
+            "🚢",
+            "🚗",
+            "🚕",
+            "🚙",
+            "🚌",
+            "🚎",
+            "🚓",
+            "🚑",
+            "🚒",
+            "🚐",
+            "🛻",
+            "🚚",
+            "🚛",
+            "🚜",
+          ],
+          activities: [
+            "⚽️",
+            "🏀",
+            "🏈",
+            "⚾️",
+            "🥎",
+            "🎾",
+            "🏐",
+            "🏉",
+            "🥏",
+            "🎱",
+            "🪀",
+            "🏓",
+            "🏸",
+            "🏒",
+            "🏑",
+            "🥍",
+            "🏏",
+            "🪃",
+            "🥅",
+            "⛳️",
+            "🪁",
+            "🏹",
+            "🎣",
+            "🤿",
+            "🥊",
+            "🥋",
+            "🎽",
+            "🛹",
+            "🛼",
+            "🛷",
+          ],
+          objects: [
+            "💡",
+            "🔦",
+            "🪔",
+            "🧯",
+            "🛢",
+            "💸",
+            "💵",
+            "💴",
+            "💶",
+            "💷",
+            "💰",
+            "💳",
+            "💎",
+            "⚖️",
+            "🪜",
+            "🧰",
+            "🪛",
+            "🔧",
+            "🔨",
+            "🪚",
+            "🔩",
+            "⚙️",
+            "🪤",
+            "🧱",
+            "🧲",
+          ],
+          symbols: [
+            "❤️",
+            "🧡",
+            "💛",
+            "💚",
+            "💙",
+            "💜",
+            "🖤",
+            "🤍",
+            "🤎",
+            "💔",
+            "❣️",
+            "💕",
+            "💞",
+            "💓",
+            "💗",
+            "💖",
+            "💘",
+            "💝",
+            "💟",
+            "☮️",
+            "✝️",
+            "☪️",
+            "☸️",
+            "✡️",
+            "🔯",
+            "🕎",
+            "☯️",
+            "☦️",
+            "🛐",
+          ],
+        };
+
+        // Clear the existing emojis
         emojiGrid.innerHTML = "";
-        commonEmojis.forEach((emoji) => {
+
+        // Update active category
+        document.querySelectorAll(".emoji-category").forEach((cat) => {
+          if (cat.dataset.category === category) {
+            cat.classList.add("active");
+          } else {
+            cat.classList.remove("active");
+          }
+        });
+
+        // Add emojis from the selected category
+        const emojis = emojiSets[category] || emojiSets.recent;
+        emojis.forEach((emoji) => {
           const emojiEl = document.createElement("div");
           emojiEl.className = "emoji";
           emojiEl.textContent = emoji;
           emojiEl.addEventListener("click", () => insertEmoji(emoji));
           emojiGrid.appendChild(emojiEl);
         });
-      }
-
-      // Load emojis by category
-      function loadEmojis(category) {
-        // In a real app, you would have different emoji sets per category
-        // For this demo, we'll use the same set for all categories
-        initEmojiPicker();
       }
 
       // Toggle emoji picker visibility
@@ -1105,7 +1405,9 @@
 
             if (replyMessage) {
               html += `<div class="reply-to">
-          <div class="reply-sender">${shortenAddress(replyMessage.sender)}</div>
+          <div class="reply-sender">${escapeHTML(
+            shortenAddress(replyMessage.sender)
+          )}</div>
           <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
         </div>`;
             }
