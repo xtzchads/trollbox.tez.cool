@@ -568,7 +568,7 @@
         const messageData = item.value;
         newMessages.push({
           id: parseInt(item.key),
-          text: messageData.message,
+          text: hexToString(messageData.message),
           sender: messageData.author,
           replyTo:
             messageData.reply_to !== null
@@ -769,7 +769,7 @@
               value: {
                 prim: "Pair",
                 args: [
-                  { string: text }, // message parameter
+                  { string: hex(text) }, // message parameter
                   replyToValue, // reply_to parameter (option type)
                 ],
               },
