@@ -1155,8 +1155,6 @@
 
       // Insert GIF into message input
       function insertGif(gifUrl) {
-        // For simplicity, we'll just insert the GIF URL as text
-        // In a real app, you might want to handle this differently
         messageInput.value = `${gifUrl}`;
         messageInput.focus();
         handleInput();
@@ -1171,15 +1169,14 @@
   loadingGifs.style.display = "flex";
   gifGrid.innerHTML = "";
   
-  // Your Cloudflare Worker URL
+  //Cloudflare Worker URL
   const WORKER_URL = "/fetchgif";
   
-  // Build the endpoint URL for your worker
   const endpoint = query !== "trending"
-    ? `${WORKER_URL}?type=search&q=${encodeURIComponent(query)}&limit=100`
-    : `${WORKER_URL}?type=trending&limit=100`;
+    ? `${WORKER_URL}?type=search&q=${encodeURIComponent(query)}&limit=50`
+    : `${WORKER_URL}?type=trending&limit=50`;
   
-  // Fetch GIFs through your Cloudflare Worker
+  // Fetch GIFs through Cloudflare Worker
   fetch(endpoint)
     .then((response) => {
       if (!response.ok) {
