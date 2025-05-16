@@ -8,6 +8,7 @@
     <script src="js/all.min.js"></script>
     <script src="js/walletbeacon.min.js"></script>
     <script src="js/axios.min.js"></script>
+
     <style>
       :root {
         --primary-color: #3390ec;
@@ -394,7 +395,8 @@
         color: var(--primary-color);
       }
 
-      .emoji-picker, .gif-picker {
+      .emoji-picker,
+      .gif-picker {
         position: absolute;
         bottom: 70px;
         left: 15px;
@@ -404,12 +406,13 @@
         padding: 10px;
         z-index: 10;
         display: none;
-        max-width: 320px;
+        max-width: 380px;
         height: 300px;
         overflow-y: auto;
       }
 
-      .emoji-picker.show, .gif-picker.show {
+      .emoji-picker.show,
+      .gif-picker.show {
         display: block;
       }
 
@@ -484,7 +487,7 @@
       }
 
       .gif-item:hover::after {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
@@ -528,7 +531,7 @@
           </button>
         </div>
         <div class="input-container">
-          <div style="width: 100%;">
+          <div style="width: 100%">
             <div class="input-toolbar">
               <button class="toolbar-btn" id="emoji-btn" title="Emoji">
                 <i class="far fa-smile"></i>
@@ -537,7 +540,7 @@
                 <i class="fas fa-film"></i>
               </button>
             </div>
-            <div style="display: flex;">
+            <div style="display: flex">
               <textarea
                 class="message-input"
                 id="message-input"
@@ -549,10 +552,10 @@
               </button>
             </div>
           </div>
-          
+
           <!-- Emoji Picker -->
           <div class="emoji-picker" id="emoji-picker">
-            <div class="emoji-categories">
+            <!--<div class="emoji-categories">
               <div class="emoji-category active" data-category="recent">🕒</div>
               <div class="emoji-category" data-category="smileys">😀</div>
               <div class="emoji-category" data-category="people">👋</div>
@@ -563,17 +566,17 @@
               <div class="emoji-category" data-category="objects">💡</div>
               <div class="emoji-category" data-category="symbols">❤️</div>
               <div class="emoji-category" data-category="flags">🏁</div>
-            </div>
+            </div>-->
             <div class="emoji-grid" id="emoji-grid"></div>
           </div>
-          
+
           <!-- GIF Picker -->
           <div class="gif-picker" id="gif-picker">
             <div class="gif-search">
-              <input type="text" id="gif-search" placeholder="Search GIFs...">
+              <input type="text" id="gif-search" placeholder="Search GIFs..." />
             </div>
             <div class="gif-grid" id="gif-grid">
-              <div class="loading" id="loading-gifs" style="display: none;">
+              <div class="loading" id="loading-gifs" style="display: none">
                 <div class="spinner"></div>
                 <span>Loading GIFs...</span>
               </div>
@@ -604,8 +607,7 @@
       const CONTRACT_ADDRESS = "KT1Ek4Nxu4XpQykpGLwaNtUJSWKuVpXFUJoy";
       const NETWORK = "mainnet";
       const RPC_URL = "https://rpc.tzbeta.net";
-      const TZKT_API_URL =
-        "https://api.tzkt.io/v1/bigmaps/743755/keys";
+      const TZKT_API_URL = "https://api.tzkt.io/v1/bigmaps/743755/keys";
 
       // State variables
       let wallet = null;
@@ -625,11 +627,28 @@
       const replyText = document.getElementById("reply-text");
       const cancelReply = document.getElementById("cancel-reply");
       const notification = document.getElementById("notification");
+      const emojiBtn = document.getElementById("emoji-btn");
+      const gifBtn = document.getElementById("gif-btn");
+      const emojiPicker = document.getElementById("emoji-picker");
+      const gifPicker = document.getElementById("gif-picker");
+      const emojiGrid = document.getElementById("emoji-grid");
+      const gifGrid = document.getElementById("gif-grid");
+      const gifSearch = document.getElementById("gif-search");
+      const loadingGifs = document.getElementById("loading-gifs");
       const notificationMessage = document.getElementById(
         "notification-message"
       );
       const loadingOverlay = document.getElementById("loading-overlay");
       const loadingText = document.getElementById("loading-text");
+      document.querySelectorAll(".emoji-category").forEach((category) => {
+        category.addEventListener("click", function () {
+          document
+            .querySelector(".emoji-category.active")
+            .classList.remove("active");
+          this.classList.add("active");
+          loadEmojis(this.dataset.category);
+        });
+      });
       function setupMessagePolling() {
         // Initial load
         loadMessages();
@@ -664,7 +683,10 @@
         messageInput.addEventListener("input", handleInput);
         sendBtn.addEventListener("click", sendMessage);
         cancelReply.addEventListener("click", cancelReplyToMessage);
-
+        emojiBtn.addEventListener("click", toggleEmojiPicker);
+        gifBtn.addEventListener("click", toggleGifPicker);
+        gifSearch.addEventListener("input", debounce(searchGifs, 500));
+        document.addEventListener("click", handleOutsideClick);
         // Ensure reply preview is initially hidden
         replyPreview.classList.remove("show");
 
@@ -674,7 +696,248 @@
           this.style.height = this.scrollHeight + "px";
         });
       }
+      function initEmojiPicker() {
+        const commonEmojis = [
+          "😀",
+          "😃",
+          "😄",
+          "😁",
+          "😆",
+          "😅",
+          "😂",
+          "🤣",
+          "😊",
+          "😇",
+          "🙂",
+          "🙃",
+          "😉",
+          "😌",
+          "😍",
+          "🥰",
+          "😘",
+          "😗",
+          "😙",
+          "😚",
+          "😋",
+          "😛",
+          "😝",
+          "😜",
+          "🤪",
+          "🤨",
+          "🧐",
+          "🤓",
+          "😎",
+          "🤩",
+          "👍",
+          "👎",
+          "👏",
+          "🙌",
+          "👋",
+          "🤝",
+          "👊",
+          "✌️",
+          "🤞",
+          "🤟",
+          "❤️",
+          "🧡",
+          "💛",
+          "💚",
+          "💙",
+          "💜",
+          "🖤",
+          "💔",
+          "❣️",
+          "💕",
+          "😢",
+          "😭",
+          "😤",
+          "😠",
+          "😡",
+          "🤬",
+          "🤯",
+          "😳",
+          "🥵",
+          "🥶",
+        ];
 
+        emojiGrid.innerHTML = "";
+        commonEmojis.forEach((emoji) => {
+          const emojiEl = document.createElement("div");
+          emojiEl.className = "emoji";
+          emojiEl.textContent = emoji;
+          emojiEl.addEventListener("click", () => insertEmoji(emoji));
+          emojiGrid.appendChild(emojiEl);
+        });
+      }
+
+      // Load emojis by category
+      function loadEmojis(category) {
+        // In a real app, you would have different emoji sets per category
+        // For this demo, we'll use the same set for all categories
+        initEmojiPicker();
+      }
+
+      // Toggle emoji picker visibility
+      function toggleEmojiPicker() {
+        if (gifPicker.classList.contains("show")) {
+          gifPicker.classList.remove("show");
+          gifBtn.classList.remove("active");
+        }
+
+        emojiPicker.classList.toggle("show");
+        emojiBtn.classList.toggle("active");
+
+        if (
+          emojiPicker.classList.contains("show") &&
+          emojiGrid.children.length === 0
+        ) {
+          initEmojiPicker();
+        }
+      }
+      function handleOutsideClick(event) {
+        // For Emoji Picker
+        if (emojiPicker.classList.contains("show")) {
+          // Check if click is outside the emoji picker and not on the emoji button
+          if (
+            !emojiPicker.contains(event.target) &&
+            event.target !== emojiBtn &&
+            !emojiBtn.contains(event.target)
+          ) {
+            emojiPicker.classList.remove("show");
+            emojiBtn.classList.remove("active");
+          }
+        }
+
+        // For GIF Picker
+        if (gifPicker.classList.contains("show")) {
+          // Check if click is outside the gif picker and not on the gif button
+          if (
+            !gifPicker.contains(event.target) &&
+            event.target !== gifBtn &&
+            !gifBtn.contains(event.target)
+          ) {
+            gifPicker.classList.remove("show");
+            gifBtn.classList.remove("active");
+          }
+        }
+      }
+      // Toggle GIF picker visibility
+      function toggleGifPicker() {
+        if (emojiPicker.classList.contains("show")) {
+          emojiPicker.classList.remove("show");
+          emojiBtn.classList.remove("active");
+        }
+
+        gifPicker.classList.toggle("show");
+        gifBtn.classList.toggle("active");
+        searchGifs();
+      }
+
+      // Insert emoji into message input
+      function insertEmoji(emoji) {
+        const cursorPos = messageInput.selectionStart;
+        const textBefore = messageInput.value.substring(0, cursorPos);
+        const textAfter = messageInput.value.substring(cursorPos);
+
+        messageInput.value = textBefore + emoji + textAfter;
+        messageInput.selectionStart = messageInput.selectionEnd =
+          cursorPos + emoji.length;
+        messageInput.focus();
+        handleInput();
+
+        // Trigger the auto-resize
+        messageInput.dispatchEvent(new Event("input"));
+
+        // Close emoji picker
+        emojiPicker.classList.remove("show");
+        emojiBtn.classList.remove("active");
+      }
+
+      // Insert GIF into message input
+      function insertGif(gifUrl) {
+        // For simplicity, we'll just insert the GIF URL as text
+        // In a real app, you might want to handle this differently
+        messageInput.value = `${gifUrl}`;
+        messageInput.focus();
+        handleInput();
+
+        // Close GIF picker
+        gifPicker.classList.remove("show");
+        gifBtn.classList.remove("active");
+      }
+
+      // Search for GIFs using Tenor API (you would need to get your own API key)
+      function searchGifs() {
+        const query = gifSearch.value.trim() || "trending";
+        loadingGifs.style.display = "flex";
+        gifGrid.innerHTML = "";
+
+        // Use Giphy API
+        // Public API key - for development only (rate limited)
+        const GIPHY_API_KEY = "UNWOXL0im1L6CqVuYcxBZMOvUWO5MX4A";
+
+        // Endpoint - search if query exists, otherwise get trending
+        const endpoint =
+          query !== "trending"
+            ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
+                query
+              )}&limit=12&rating=pg-13`
+            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=pg-13`;
+
+        // Fetch GIFs from Giphy
+        fetch(endpoint)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            loadingGifs.style.display = "none";
+
+            if (data.data && data.data.length > 0) {
+              data.data.forEach((gif) => {
+                const gifItem = document.createElement("div");
+                gifItem.className = "gif-item";
+
+                // Use downsized format for preview (smaller/faster)
+                const img = document.createElement("img");
+                img.src = gif.images.downsized.url;
+                img.alt = gif.title || "GIF";
+                img.loading = "lazy"; // Lazy loading for better performance
+
+                gifItem.appendChild(img);
+                gifItem.addEventListener("click", () => {
+                  // When clicked, insert the original GIF URL
+                  insertGif(gif.images.original.url);
+                });
+
+                gifGrid.appendChild(gifItem);
+              });
+            } else {
+              // No results
+              gifGrid.innerHTML =
+                '<div style="text-align: center; width: 100%; padding: 20px;">No GIFs found. Try a different search term.</div>';
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching GIFs:", error);
+            loadingGifs.style.display = "none";
+            gifGrid.innerHTML =
+              '<div style="text-align: center; width: 100%; padding: 20px;">Error loading GIFs. Please try again.</div>';
+          });
+      }
+
+      // Utility: Debounce function to limit API calls
+      function debounce(func, delay) {
+        let timeout;
+        return function () {
+          const context = this;
+          const args = arguments;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+      }
       // Toggle wallet connection
       // Toggle wallet connection
       async function toggleWalletConnection() {
@@ -715,69 +978,73 @@
 
       // Load messages from contract
       async function loadMessages() {
-  try {
-    // Only show loading indicator on initial load (when no messages are displayed)
-    if (
-      messagesContainer.children.length === 0 ||
-      messagesContainer.innerHTML.includes("loading-messages")
-    ) {
-      loadingMessages.style.display = "flex";
-    }
+        try {
+          // Only show loading indicator on initial load (when no messages are displayed)
+          if (
+            messagesContainer.children.length === 0 ||
+            messagesContainer.innerHTML.includes("loading-messages")
+          ) {
+            loadingMessages.style.display = "flex";
+          }
 
-    // Fetch messages from tzkt API
-    const response = await axios.get(TZKT_API_URL);
-    const messagesData = response.data;
+          // Fetch messages from tzkt API
+          const response = await axios.get(TZKT_API_URL);
+          const messagesData = response.data;
 
-    if (messagesData && messagesData.length > 0) {
-      const newMessages = [];
+          if (messagesData && messagesData.length > 0) {
+            const newMessages = [];
 
-      // Process messages
-      messagesData.forEach((item) => {
-        const messageData = item.value;
-        newMessages.push({
-          id: parseInt(item.key),
-          text: isHex(messageData.message)?hexToString(messageData.message):messageData.message,
-          sender: messageData.author,
-          replyTo:
-            messageData.reply_to !== null
-              ? { some: parseInt(messageData.reply_to) }
-              : { none: "" },
-          timestamp: new Date(messageData.timestamp),
-        });
-      });
+            // Process messages
+            messagesData.forEach((item) => {
+              const messageData = item.value;
+              newMessages.push({
+                id: parseInt(item.key),
+                text: isHex(messageData.message)
+                  ? hexToString(messageData.message)
+                  : messageData.message,
+                sender: messageData.author,
+                replyTo:
+                  messageData.reply_to !== null
+                    ? { some: parseInt(messageData.reply_to) }
+                    : { none: "" },
+                timestamp: new Date(messageData.timestamp),
+              });
+            });
 
-      // Sort messages by ID (which should correspond to chronological order)
-      newMessages.sort((a, b) => a.id - b.id);
+            // Sort messages by ID (which should correspond to chronological order)
+            newMessages.sort((a, b) => a.id - b.id);
 
-      // Check if we have new messages by comparing length or the latest message ID
-      const hasNewMessages = 
-        newMessages.length !== messages.length || 
-        (newMessages.length > 0 && messages.length > 0 && 
-         newMessages[newMessages.length - 1].id !== messages[messages.length - 1].id);
+            // Check if we have new messages by comparing length or the latest message ID
+            const hasNewMessages =
+              newMessages.length !== messages.length ||
+              (newMessages.length > 0 &&
+                messages.length > 0 &&
+                newMessages[newMessages.length - 1].id !==
+                  messages[messages.length - 1].id);
 
-      // Update our messages array
-      messages = newMessages;
+            // Update our messages array
+            messages = newMessages;
 
-      // Render if this is the first load, we just connected, or we have new messages
-      if (
-        messagesContainer.children.length === 0 ||
-        messagesContainer.innerHTML.includes("loading-messages") ||
-        hasNewMessages
-      ) {
-        renderMessages();
+            // Render if this is the first load, we just connected, or we have new messages
+            if (
+              messagesContainer.children.length === 0 ||
+              messagesContainer.innerHTML.includes("loading-messages") ||
+              hasNewMessages
+            ) {
+              renderMessages();
+            }
+          }
+
+          loadingMessages.style.display = "none";
+        } catch (error) {
+          console.error("Error loading messages:", error);
+          showNotification(
+            "Failed to load messages. Please try again.",
+            "error"
+          );
+          loadingMessages.style.display = "none";
+        }
       }
-    }
-
-    loadingMessages.style.display = "none";
-  } catch (error) {
-    console.error("Error loading messages:", error);
-    showNotification(
-      "Failed to load messages. Please try again.",
-      "error"
-    );
-    loadingMessages.style.display = "none";
-  }
-}
 
       // Render messages in the UI
       // Render messages in the UI
@@ -807,7 +1074,7 @@
           if (!isMyMessage) {
             const avatarImg = document.createElement("img");
             avatarImg.src =
-              "https://services.tzkt.io/v1/avatars/" + message.sender; // Default placeholder
+              "https://services.tzkt.io/v1/avatars/" + message.sender;
             avatarImg.alt = "avatar";
             avatarEl.appendChild(avatarImg);
 
@@ -825,9 +1092,11 @@
 
           // Add sender at the top
           html += `<div class="message-info">
-          <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
-          <span class="message-time">${formatTime(message.timestamp)}</span>
-      </div>`;
+      <span class="message-sender">${escapeHTML(
+        shortenAddress(message.sender)
+      )}</span>
+      <span class="message-time">${formatTime(message.timestamp)}</span>
+    </div>`;
 
           // Add reply content if it's a reply
           if (message.replyTo && message.replyTo.some !== undefined) {
@@ -836,18 +1105,27 @@
 
             if (replyMessage) {
               html += `<div class="reply-to">
-            <div class="reply-sender">${shortenAddress(
-              replyMessage.sender
-            )}</div>
-            <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
-          </div>`;
+          <div class="reply-sender">${shortenAddress(replyMessage.sender)}</div>
+          <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
+        </div>`;
             }
           }
 
+          // Check if the message is a GIF URL
+          const isGif =
+            message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !==
+            null;
+
           // Add message content
-          html += `<div class="message-content">${escapeHTML(
-            message.text
-          )}</div>`;
+          if (isGif) {
+            html += `<div class="message-content">
+        <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
+      </div>`;
+          } else {
+            html += `<div class="message-content">${escapeHTML(
+              message.text
+            )}</div>`;
+          }
 
           messageEl.innerHTML = html;
 
@@ -866,11 +1144,9 @@
           if (isMyMessage) {
             const avatarImg = document.createElement("img");
             avatarImg.src =
-              "https://services.tzkt.io/v1/avatars/" + message.sender; // Default placeholder
+              "https://services.tzkt.io/v1/avatars/" + message.sender;
             avatarImg.alt = "avatar";
             avatarEl.appendChild(avatarImg);
-
-            // Try to fetch the actual avatar
 
             messageContainer.appendChild(avatarEl);
           }
@@ -909,6 +1185,11 @@
       async function sendMessage() {
         const text = messageInput.value.trim();
         if (!text || !isConnected) return;
+
+        // Check if it's a GIF URL (simple check, you might want more robust validation)
+        const isGif =
+          text.startsWith("http") &&
+          (text.includes(".gif") || text.includes("placeholder"));
 
         try {
           showLoading("Sending message...");
@@ -1047,25 +1328,26 @@
       }
 
       function hex(str) {
-      return Array.from(new TextEncoder().encode(str))
-        .map(byte => byte.toString(16).padStart(2, '0'))
-        .join('');
-    }
+        return Array.from(new TextEncoder().encode(str))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+      }
 
       function hexToString(hex) {
-      const bytes = [];
-      for (let i = 0; i < hex.length; i += 2) {
-        bytes.push(parseInt(hex.substr(i, 2), 16));
+        const bytes = [];
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes.push(parseInt(hex.substr(i, 2), 16));
+        }
+        return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
       }
-      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
-    }
 
       function isHex(str) {
-  return /^[0-9A-Fa-f]+$/.test(str);
-}
+        return /^[0-9A-Fa-f]+$/.test(str);
+      }
 
       // Initialize on load
       document.addEventListener("DOMContentLoaded", init);
     </script>
   </body>
 </html>
+
