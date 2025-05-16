@@ -1525,11 +1525,6 @@ if (!initialLoadComplete) {
         const text = messageInput.value.trim();
         if (!text || !isConnected) return;
 
-        // Check if it's a GIF URL (simple check, you might want more robust validation)
-        const isGif =
-          text.startsWith("http") &&
-          (text.includes(".gif") || text.includes("placeholder"));
-
         try {
           showLoading("Sending message...");
 
