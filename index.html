@@ -517,6 +517,7 @@
           walletAddressEl.textContent = "";
           connectWalletBtn.textContent = "Connect Wallet";
           isConnected = false;
+          handleInput();
           messagesContainer.innerHTML =
             '<div class="loading" id="loading-messages"><div class="spinner"></div><span>Loading messages...</span></div>';
           loadingMessages.style.display = "flex";
