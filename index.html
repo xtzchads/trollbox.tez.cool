@@ -1367,10 +1367,19 @@ function renderMessages() {
       const replyId = parseInt(message.replyTo.some);
       const replyMessage = messages.find((m) => m.id === replyId);
       if (replyMessage) {
+        const isGifRep = 
+      (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
+      (message.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
         html += `<div class="reply-to">
-          <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>
-          <div class="reply-content">${escapeHTML(replyMessage.text)}</div>
-        </div>`;
+          <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>`;
+        if (isGifRep) {
+      html += `<div class="reply-content">
+        <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
+      </div>`;
+    } else {
+      html += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
+    }
+          
       }
     }
     
