@@ -649,7 +649,7 @@
 
           // Add sender at the top
           html += `<div class="message-info">
-          <span class="message-sender">${shortenAddress(message.sender)}</span>
+          <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
           <span class="message-time">${formatTime(message.timestamp)}</span>
       </div>`;
 
