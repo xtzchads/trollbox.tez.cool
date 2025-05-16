@@ -1414,8 +1414,9 @@
 
           // Check if the message is a GIF URL
           const isGif =
-            message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !==
-            null;
+            (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !==
+            null) || (message.text.match(/^https:\/\/media\.tenor\.com\//) !==
+            null);
 
           // Add message content
           if (isGif) {
