@@ -568,7 +568,7 @@
         const messageData = item.value;
         newMessages.push({
           id: parseInt(item.key),
-          text: hexToString(messageData.message),
+          text: isHex(messageData.message)?hexToString(messageData.message):messageData.message,
           sender: messageData.author,
           replyTo:
             messageData.reply_to !== null
@@ -918,6 +918,10 @@
       }
       return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
     }
+
+      function isHex(str) {
+  return /^[0-9A-Fa-f]+$/.test(str);
+}
 
       // Initialize on load
       document.addEventListener("DOMContentLoaded", init);
