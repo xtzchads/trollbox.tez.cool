@@ -905,6 +905,20 @@
           .replace(/'/g, "&#039;");
       }
 
+      function hex(str) {
+      return Array.from(new TextEncoder().encode(str))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+      function hexToString(hex) {
+      const bytes = [];
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+      }
+      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+    }
+
       // Initialize on load
       document.addEventListener("DOMContentLoaded", init);
     </script>
