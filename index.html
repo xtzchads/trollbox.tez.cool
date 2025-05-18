@@ -1403,12 +1403,10 @@ function renderMessages() {
     messageEl.innerHTML = html;
     
     // Add click event for reply functionality
-    if (isConnected) {
       messageEl.addEventListener("click", function() {
         const messageId = parseInt(this.dataset.id);
         replyToMessage(messageId);
       });
-    }
 
     // Create avatar element - reused for both my messages and other messages
     const createAvatar = () => {
