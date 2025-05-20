@@ -1375,30 +1375,55 @@ function renderMessages() {
       (replyMessage.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
         html += `<div class="reply-to">
           <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>`;
-        if (isGifRep) {
-      html += `<div class="reply-content">
-        <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
-      </div></div>`;
-    } else {
-      html += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
-    }
+        const youtubeReplyId = getYoutubeVideoId(replyMessage.text);
+const isYoutubeRep = youtubeReplyId !== null;
+
+if (isGifRep) {
+  html += `<div class="reply-content">
+    <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
+  </div></div>`;
+} else if (isYoutubeRep) {
+  html += `<div class="reply-content">
+    <div class="youtube-embed-small">
+      YouTube: ${escapeHTML(replyMessage.text.substring(0, 30))}...
+    </div>
+  </div></div>`;
+} else {
+  html += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
+}
           
       }
     }
     
     // Check if the message is a GIF URL
     const isGif = 
-      (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
-      (message.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
-    
-    // Add message content
-    if (isGif) {
-      html += `<div class="message-content">
-        <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
-      </div>`;
-    } else {
-      html += `<div class="message-content">${escapeHTML(message.text)}</div>`;
-    }
+  (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
+  (message.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
+
+// Check if the message is a YouTube URL
+const youtubeVideoId = getYoutubeVideoId(message.text);
+const isYoutube = youtubeVideoId !== null;
+
+// Add message content based on type
+if (isGif) {
+  html += `<div class="message-content">
+    <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
+  </div>`;
+} else if (isYoutube) {
+  html += `<div class="message-content">
+    <div class="youtube-embed">
+      <iframe 
+        width="100%" 
+        height="200" 
+        src="https://www.youtube.com/embed/${youtubeVideoId}" 
+        frameborder="0" 
+        allowfullscreen>
+      </iframe>
+    </div>
+  </div>`;
+} else {
+  html += `<div class="message-content">${escapeHTML(message.text)}</div>`;
+}
     
     messageEl.innerHTML = html;
     
@@ -1674,6 +1699,26 @@ if (!initialLoadComplete) {
       function isHex(str) {
         return /^[0-9A-Fa-f]+$/.test(str);
       }
+
+      function getYoutubeVideoId(url) {
+  // Handle youtube.com links
+  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?/;
+  const youtubeMatch = url.match(youtubeRegex);
+  
+  if (youtubeMatch) {
+    return youtubeMatch[1];
+  }
+  
+  // Handle youtu.be links
+  const youtuBeRegex = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?.*)?/;
+  const youtuBeMatch = url.match(youtuBeRegex);
+  
+  if (youtuBeMatch) {
+    return youtuBeMatch[1];
+  }
+  
+  return null;
+}
 
       // Initialize on load
       document.addEventListener("DOMContentLoaded", init);
