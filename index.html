@@ -1336,9 +1336,10 @@
       }
 
       // Render messages in the UI
-      // Render messages in the UI
 function renderMessages() {
   messagesContainer.innerHTML = "";
+  
+  // Handle empty state
   if (messages.length === 0) {
     const emptyState = document.createElement("div");
     emptyState.className = "loading";
@@ -1347,6 +1348,85 @@ function renderMessages() {
     return;
   }
 
+  // Helper functions
+  const isGifUrl = (url) => {
+    return url.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null || 
+           url.match(/^https:\/\/media\.tenor\.com\//) !== null;
+  };
+  
+  const createAvatar = (sender) => {
+    const avatarEl = document.createElement("div");
+    avatarEl.className = "avatar";
+    
+    const avatarLink = document.createElement("a");
+    avatarLink.href = "https://tzkt.io/" + sender;
+    avatarLink.target = "_blank";
+    
+    const avatarImg = document.createElement("img");
+    avatarImg.src = "https://services.tzkt.io/v1/avatars/" + sender;
+    avatarImg.alt = "avatar";
+    
+    // Prevent triggering message reply when clicking the avatar
+    avatarLink.addEventListener("click", (event) => event.stopPropagation());
+    
+    avatarLink.appendChild(avatarImg);
+    avatarEl.appendChild(avatarLink);
+    
+    return avatarEl;
+  };
+  
+  const renderMessageContent = (message) => {
+    if (isGifUrl(message.text)) {
+      return `<div class="message-content">
+        <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
+      </div>`;
+    } 
+    
+    const youtubeVideoId = getYoutubeVideoId(message.text);
+    if (youtubeVideoId !== null) {
+      return `<div class="message-content">
+        <div class="youtube-embed">
+          <iframe 
+            width="100%" 
+            height="200" 
+            src="https://www.youtube.com/embed/${youtubeVideoId}" 
+            frameborder="0" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>`;
+    }
+    
+    return `<div class="message-content">${escapeHTML(message.text)}</div>`;
+  };
+  
+  const renderReplyContent = (replyMessage) => {
+    if (!replyMessage) return '';
+    
+    let replyContent = `<div class="reply-to">
+      <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>`;
+      
+    if (isGifUrl(replyMessage.text)) {
+      replyContent += `<div class="reply-content">
+        <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
+      </div></div>`;
+    } else {
+      const youtubeVideoId = getYoutubeVideoId(replyMessage.text);
+      if (youtubeVideoId !== null) {
+        replyContent += `<div class="reply-content">
+          <div class="youtube-embed-small">
+            YouTube: ${escapeHTML(replyMessage.text.substring(0, 30))}...
+          </div>
+        </div></div>`;
+      } else {
+        replyContent += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
+      }
+    }
+    
+    return replyContent;
+  };
+
+  // Render each message
   messages.forEach((message) => {
     const messageContainer = document.createElement("div");
     messageContainer.className = "message-container";
@@ -1357,165 +1437,84 @@ function renderMessages() {
     messageEl.className = `message ${isMyMessage ? "my-message" : "other-message"}`;
     messageEl.dataset.id = message.id;
     
+    // Find reply message if exists
+    let replyMessage = null;
+    if (message.replyTo && message.replyTo.some !== undefined) {
+      const replyId = parseInt(message.replyTo.some);
+      replyMessage = messages.find((m) => m.id === replyId);
+    }
+    
     // Build message HTML content
-    let html = "";
-    // Add sender at the top
-    html += `<div class="message-info">
+    let html = `<div class="message-info">
       <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
       <span class="message-time">${formatTime(message.timestamp)}</span>
     </div>`;
     
-    // Add reply content if it's a reply
-    if (message.replyTo && message.replyTo.some !== undefined) {
-      const replyId = parseInt(message.replyTo.some);
-      const replyMessage = messages.find((m) => m.id === replyId);
-      if (replyMessage) {
-        const isGifRep = 
-      (replyMessage.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
-      (replyMessage.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
-        html += `<div class="reply-to">
-          <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>`;
-        const youtubeReplyId = getYoutubeVideoId(replyMessage.text);
-const isYoutubeRep = youtubeReplyId !== null;
-
-if (isGifRep) {
-  html += `<div class="reply-content">
-    <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
-  </div></div>`;
-} else if (isYoutubeRep) {
-  html += `<div class="reply-content">
-    <div class="youtube-embed-small">
-      YouTube: ${escapeHTML(replyMessage.text.substring(0, 30))}...
-    </div>
-  </div></div>`;
-} else {
-  html += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
-}
-          
-      }
-    }
+    // Add reply content if exists
+    html += renderReplyContent(replyMessage);
     
-    // Check if the message is a GIF URL
-    const isGif = 
-  (message.text.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null) || 
-  (message.text.match(/^https:\/\/media\.tenor\.com\//) !== null);
-
-// Check if the message is a YouTube URL
-const youtubeVideoId = getYoutubeVideoId(message.text);
-const isYoutube = youtubeVideoId !== null;
-
-// Add message content based on type
-if (isGif) {
-  html += `<div class="message-content">
-    <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
-  </div>`;
-} else if (isYoutube) {
-  html += `<div class="message-content">
-    <div class="youtube-embed">
-      <iframe 
-        width="100%" 
-        height="200" 
-        src="https://www.youtube.com/embed/${youtubeVideoId}" 
-        frameborder="0" 
-        allowfullscreen>
-      </iframe>
-    </div>
-  </div>`;
-} else {
-  html += `<div class="message-content">${escapeHTML(message.text)}</div>`;
-}
+    // Add message content
+    html += renderMessageContent(message);
     
     messageEl.innerHTML = html;
     
     // Add click event for reply functionality
-      messageEl.addEventListener("click", function() {
-        const messageId = parseInt(this.dataset.id);
-        replyToMessage(messageId);
-      });
+    messageEl.addEventListener("click", function() {
+      replyToMessage(parseInt(this.dataset.id));
+    });
 
-    // Create avatar element - reused for both my messages and other messages
-    const createAvatar = () => {
-      const avatarEl = document.createElement("div");
-      avatarEl.className = "avatar";
-      
-      const avatarLink = document.createElement("a");
-      avatarLink.href = "https://tzkt.io/" + message.sender;
-      avatarLink.target = "_blank";
-      
-      const avatarImg = document.createElement("img");
-      avatarImg.src = "https://services.tzkt.io/v1/avatars/" + message.sender;
-      avatarImg.alt = "avatar";
-      
-      // Prevent triggering message reply when clicking the avatar
-      avatarLink.addEventListener("click", function(event) {
-        event.stopPropagation();
-      });
-      
-      avatarLink.appendChild(avatarImg);
-      avatarEl.appendChild(avatarLink);
-      
-      return avatarEl;
-    };
-
-    // Place avatars differently based on message owner
+    // Add avatars based on message owner
     if (!isMyMessage) {
-      // For other people's messages, avatar goes first
-      messageContainer.appendChild(createAvatar());
+      messageContainer.appendChild(createAvatar(message.sender));
     }
     
-    // Add message to container
     messageContainer.appendChild(messageEl);
     
-    // For my messages, avatar goes last
     if (isMyMessage) {
-      messageContainer.appendChild(createAvatar());
+      messageContainer.appendChild(createAvatar(message.sender));
     }
     
     messagesContainer.appendChild(messageContainer);
   });
   
-  // Scroll to bottom on initial render only
-if (!initialLoadComplete) {
-  // Find all GIF images in the messages
-  const gifImages = messagesContainer.querySelectorAll('.gif-content');
-  
-  if (gifImages.length > 0) {
-    // Wait for all GIFs to load before scrolling
-    let loadedCount = 0;
+  // Handle scrolling after initial load
+  if (!initialLoadComplete) {
+    const gifImages = messagesContainer.querySelectorAll('.gif-content');
     
-    gifImages.forEach(img => {
-      if (img.complete) {
-        loadedCount++;
-        // If all images are loaded, scroll down
-        if (loadedCount === gifImages.length) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          initialLoadComplete = true;
-        }
-      } else {
-        img.addEventListener('load', () => {
+    if (gifImages.length > 0) {
+      let loadedCount = 0;
+      
+      gifImages.forEach(img => {
+        if (img.complete) {
           loadedCount++;
-          // If all images are loaded, scroll down
           if (loadedCount === gifImages.length) {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             initialLoadComplete = true;
           }
-        });
-      }
-    });
-    
-    // Also set a timeout in case some images fail to load
-    setTimeout(() => {
-      if (!initialLoadComplete) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        initialLoadComplete = true;
-      }
-    }, 2000);
-  } else {
-    // No GIFs, scroll immediately
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    initialLoadComplete = true;
+        } else {
+          img.addEventListener('load', () => {
+            loadedCount++;
+            if (loadedCount === gifImages.length) {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              initialLoadComplete = true;
+            }
+          });
+        }
+      });
+      
+      // Fallback timeout in case images fail to load
+      setTimeout(() => {
+        if (!initialLoadComplete) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          initialLoadComplete = true;
+        }
+      }, 2000);
+    } else {
+      // No GIFs, scroll immediately
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      initialLoadComplete = true;
+    }
   }
-}
 }
 
       // Reply to a message
