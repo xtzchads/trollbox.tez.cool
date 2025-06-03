@@ -1583,7 +1583,7 @@ function renderMessages() {
     avatarLink.target = "_blank";
     
     const avatarImg = document.createElement("img");
-    avatarImg.src = "https://services.tzkt.io/v1/avatars/" + sender;
+    avatarImg.src = "https://services.tzkt.io/v1/avatars/" + escapeHTML(sender);
     avatarImg.alt = "avatar";
     
     // Prevent triggering message reply when clicking the avatar
