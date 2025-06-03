@@ -9,6 +9,7 @@
     <script src="js/walletbeacon.min.js"></script>
     <script src="js/axios.min.js"></script>
     <style>
+
 :root {
   --primary-color: #3390ec;
   --secondary-color: #eaeaea;
@@ -110,7 +111,7 @@ body {
   align-items: center;
   padding: 15px 0;
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   transition: border-color 0.3s ease;
 }
 
@@ -575,10 +576,11 @@ body {
 
 /* Dark mode toggle switch styles */
 .theme-toggle {
+margin:auto;
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-right: 15px;
+  margin-bottom:10px;
 }
 
 .theme-toggle-label {
@@ -672,19 +674,20 @@ body {
       <div class="header">
         <div class="app-title">TezTrollBox</div>
         <div class="wallet-section">
-  <div class="theme-toggle">
+  <div class="wallet-address" id="wallet-address">Anon</div>
+  <button class="connect-btn" id="connect-wallet">
+    Connect Wallet
+  </button>
+</div>
+
+      </div>
+	  <div class="theme-toggle">
     <button class="toggle-switch" id="theme-toggle">
       <div class="toggle-slider">
         <i class="fas fa-moon" id="theme-icon"></i>
       </div>
     </button>
   </div>
-  <div class="wallet-address" id="wallet-address">Anon</div>
-  <button class="connect-btn" id="connect-wallet">
-    Connect Wallet
-  </button>
-</div>
-      </div>
       <div class="chat-container">
         <div class="messages-container" id="messages-container">
           <div class="loading" id="loading-messages">
@@ -1941,4 +1944,3 @@ function renderMessages() {
     </script>
   </body>
 </html>
-
