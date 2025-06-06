@@ -819,8 +819,6 @@ function renderMessages() {
     const urlRegex = /https?:\/\/[^\s]+/gi;
     const text = message.text;
     const urls = [...new Set(text.match(urlRegex) || [])];
-	console.log(urls);
-    
     // If no URLs found, just return escaped text
     if (urls.length === 0) {
         return `<div class="message-content">${escapeHTML(text)}</div>`;
@@ -855,7 +853,6 @@ function renderMessages() {
             }
         }
     });
-	console.log(processedContent);
 	return `<div class="message-content">`+processedContent+`</div>`;
     };
 
