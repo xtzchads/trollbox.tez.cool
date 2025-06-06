@@ -598,7 +598,7 @@ function insertEmoji(emoji) {
 
 // Insert GIF into message input
 function insertGif(gifUrl) {
-    messageInput.value = `${gifUrl}`;
+    messageInput.value = (messageInput.value==='')?`${gifUrl}`:(messageInput.value+`\n${gifUrl}`);
     messageInput.focus();
     handleInput();
 
@@ -816,28 +816,47 @@ function renderMessages() {
     };
 
     const renderMessageContent = (message) => {
-        if (isGifUrl(message.text)) {
-            return `<div class="message-content">
-        <img src="${escapeHTML(message.text)}" class="gif-content" alt="GIF">
-      </div>`;
+    const urlRegex = /https?:\/\/[^\s]+/gi;
+    const text = message.text;
+    const urls = [...new Set(text.match(urlRegex) || [])];
+	console.log(urls);
+    
+    // If no URLs found, just return escaped text
+    if (urls.length === 0) {
+        return `<div class="message-content">${escapeHTML(text)}</div>`;
+    }
+    
+    let processedContent = text;
+    
+    // Process each URL found
+    urls.forEach(url => {
+        if (isGifUrl(url)) {
+            // Replace GIF URL with img tag
+            const gifElement = `<img src="${escapeHTML(url)}" class="gif-content" alt="GIF">`;
+            processedContent = processedContent.replaceAll(url, gifElement);
+        } else {
+            const youtubeVideoId = getYoutubeVideoId(url);
+            if (youtubeVideoId !== null) {
+                // Replace YouTube URL with iframe
+                const youtubeElement = `<div class="youtube-embed">
+                    <iframe 
+                        width="100%" 
+                        height="200" 
+                        src="https://www.youtube.com/embed/${escapeHTML(youtubeVideoId)}" 
+                        frameborder="0" 
+                        allowfullscreen>
+                    </iframe>
+                </div>`;
+                processedContent = processedContent.replaceAll(url, youtubeElement);
+            } else {
+                // Replace regular URL with anchor tag
+                const linkElement = `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHTML(url)}</a>`;
+                processedContent = processedContent.replaceAll(url, linkElement);
+            }
         }
-
-        const youtubeVideoId = getYoutubeVideoId(message.text);
-        if (youtubeVideoId !== null) {
-            return `<div class="message-content">
-        <div class="youtube-embed">
-          <iframe 
-            width="100%" 
-            height="200" 
-            src="https://www.youtube.com/embed/${escapeHTML(youtubeVideoId)}" 
-            frameborder="0" 
-            allowfullscreen>
-          </iframe>
-        </div>
-      </div>`;
-        }
-
-        return `<div class="message-content">${escapeHTML(message.text)}</div>`;
+    });
+	console.log(processedContent);
+	return `<div class="message-content">`+processedContent+`</div>`;
     };
 
     const renderReplyContent = (replyMessage) => {
