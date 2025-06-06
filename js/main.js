@@ -919,11 +919,11 @@ function renderMessages() {
         messageEl.innerHTML = html;
 
         // Add click event for reply functionality
-        messageEl.addEventListener("click", function () {
-	if (event.target === this) {
-            replyToMessage(parseInt(this.dataset.id));
-	}
-        });
+ 	messageEl.addEventListener("click", function (event) {
+   	if (event.target === this) {
+        replyToMessage(parseInt(this.dataset.id));
+    	}
+	});
 
         // Add avatars based on message owner
         if (!isMyMessage) {
