@@ -826,7 +826,7 @@ function renderMessages() {
         return `<div class="message-content">${escapeHTML(text)}</div>`;
     }
     
-    let processedContent = text;
+    let processedContent = escapeHTML(text);
     
     // Process each URL found
     urls.forEach(url => {
