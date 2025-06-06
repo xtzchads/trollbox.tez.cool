@@ -920,10 +920,10 @@ function renderMessages() {
 
         // Add click event for reply functionality
  	messageEl.addEventListener("click", function (event) {
-   	if (event.target === this) {
+   	if (event.target.tagName === 'A')
+        return;
         replyToMessage(parseInt(this.dataset.id));
-    	}
-	});
+        });
 
         // Add avatars based on message owner
         if (!isMyMessage) {
