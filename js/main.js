@@ -676,7 +676,7 @@ async function toggleWalletConnection() {
         // Disconnect wallet
         await wallet.clearActiveAccount();
         userAddress = null;
-        walletAddressEl.textContent = "";
+        walletAddressEl.textContent = "Anon";
         connectWalletBtn.textContent = "Connect Wallet";
         isConnected = false;
         handleInput();
