@@ -23,8 +23,6 @@ TrollBox is a community-driven chat platform designed specifically for Tezos ent
 - **Deployment**: Github Pages
 - **Data Providers**: TzKT
 
-## 🏗️ Installation
-
 ### Prerequisites
 
 None. Well except cloudflare account to run worker.js as serverless script (mainly to protect tenor API keys for GIFs from unauthorized usage). If you don't need GIFs functionality, you don't need a worker
