@@ -818,13 +818,12 @@ function renderMessages() {
     const renderMessageContent = (message) => {
     const urlRegex = /https?:\/\/[^\s]+/gi;
     const text = message.text;
-    const urls = [...new Set(text.match(urlRegex) || [])];
+	let processedContent = escapeHTML(text);
+    const urls = [...new Set(processedContent.match(urlRegex) || [])];
     // If no URLs found, just return escaped text
     if (urls.length === 0) {
         return `<div class="message-content">${escapeHTML(text)}</div>`;
     }
-    
-    let processedContent = escapeHTML(text);
     
     // Process each URL found
     urls.forEach(url => {
