@@ -1,115 +1,800 @@
 <!DOCTYPE html>
 <html lang="en">
-   <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>TezTrollBox</title>
-      <link rel="stylesheet" type="text/css" href="css/main.css?v=1.0">
-      <script src="js/moment.min.js"></script>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TezTrollBox</title>
+	      <script src="js/moment.min.js"></script>
       <script src="js/all.min.js"></script>
       <script src="js/walletbeacon.min.js"></script>
       <script src="js/axios.min.js"></script>
-   </head>
-   <body>
-      <div class="container">
-         <div class="header">
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Monda:400,500,600");
+
+        /* CSS Variables */
+        :root {
+            --colorful: rgba(239, 123, 227, 1);
+            --primary-gradient: linear-gradient(180deg, rgba(162, 124, 238, 1) 0%, rgba(127, 75, 231, 1) 100%);
+            --glass-bg: rgba(255, 255, 255, 0.01);
+            --glass-border: rgba(255, 255, 255, 0.26);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --shadow-glass: 11px 14px 39px rgba(5, 2, 13, 0.1), 45px 54px 70px rgba(5, 2, 13, 0.09), 100px 122px 95px rgba(5, 2, 13, 0.05);
+            --border-radius-sm: 16px;
+            --border-radius-md: 30px;
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+            --my-message-bg: linear-gradient(135deg, rgba(162, 124, 238, 0.2) 0%, rgba(127, 75, 231, 0.2) 100%);
+            --other-message-bg: rgba(255, 255, 255, 0.05);
+            --hover-color: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Monda", Helvetica;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+		background: radial-gradient(50% 50% at 65% 50%, rgba(36, 26, 76, 1) 0%, rgba(9, 3, 28, 1) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+		a {color: inherit;}
+
+        /* Utility Classes */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--border-radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: "Monda", Helvetica;
+            font-weight: 500;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-md);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) 0;
+        }
+
+        .app-title {
+            font-family: 'Comic Sans MS', 'Kalam', 'Marker Felt', 'Trebuchet MS', cursive;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: bold;
+            background: linear-gradient(135deg, #a27cee 0%, #7f4be7 50%, #ef7be3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(162, 124, 238, 0.3)); }
+            to { filter: drop-shadow(0 0 20px rgba(162, 124, 238, 0.6)); }
+        }
+
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .wallet-address {
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius-sm);
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .connect-btn {
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+            border: none;
+             padding: 8px;
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3);
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-glass);
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+            width: 100%;
+        }
+
+        .message-container {
+            display: flex;
+            margin-bottom: var(--spacing-sm);
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: var(--spacing-sm);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message {
+            max-width: calc(90% - 46px);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 18px;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .message.my-message {
+            margin-left: auto;
+            background: var(--my-message-bg);
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .message.other-message {
+            margin-right: auto;
+            background: var(--other-message-bg);
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .message:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(127, 75, 231, 0.2);
+        }
+
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: var(--spacing-xs) var(--spacing-sm) 0 var(--spacing-sm);
+        }
+
+        .message-content {
+            clear: both;
+            padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+            font-size: 15px;
+            word-break: break-word;
+            color: var(--text-primary);
+        }
+
+        .message-sender {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .message-time {
+            margin-left: 5px;
+        }
+
+        .reply-to {
+            margin: 0 var(--spacing-sm) var(--spacing-xs) var(--spacing-sm);
+            background: var(--hover-color);
+            border-left: 3px solid var(--colorful);
+            padding: var(--spacing-xs);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .input-container {
+            display: flex;
+            background: var(--input-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: var(--spacing-sm);
+            border-top: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .reply-preview {
+            top: -60px;
+            left: 0;
+            right: 0;
+            background: var(--input-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: var(--spacing-sm);
+            border-top: 1px solid var(--glass-border);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .reply-preview.show {
+            display: flex;
+        }
+
+        .reply-preview-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cancel-reply {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 16px;
+            padding: var(--spacing-xs);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-reply:hover {
+            background: var(--hover-color);
+            color: var(--text-primary);
+        }
+
+        .input-toolbar {
+            display: flex;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .toolbar-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-right: var(--spacing-sm);
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .toolbar-btn:hover {
+            color: var(--colorful);
+            background: var(--hover-color);
+        }
+
+        .toolbar-btn.active {
+            color: var(--colorful);
+            background: var(--hover-color);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: var(--text-primary);
+            border-radius: var(--border-radius-md);
+            outline: none;
+            font-size: 15px;
+            margin-right: var(--spacing-sm);
+            resize: none;
+            max-height: 150px;
+            min-height: 42px;
+            transition: all 0.3s ease;
+			  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+        }
+		
+
+.message-input::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+        .message-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .message-input:focus {
+            border-color: var(--colorful);
+            box-shadow: 0 0 0 2px rgba(239, 123, 227, 0.2);
+        }
+
+        .send-btn {
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+            border: none;
+                width: 58px;
+    height: 58px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3);
+        }
+
+        .send-btn:disabled {
+            background: var(--glass-bg);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            border: 4px solid var(--glass-border);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--colorful);
+            animation: spin 1s linear infinite;
+            margin-right: var(--spacing-sm);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            padding: var(--spacing-sm);
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-glass);
+            z-index: 1000;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .notification.error {
+            border-left: 4px solid #e53935;
+        }
+
+        .notification.success {
+            border-left: 4px solid #43a047;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+        }
+
+        .notification-icon {
+            margin-right: var(--spacing-sm);
+            font-size: 20px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(50% 50% at 50% 50%, rgba(36, 26, 76, 0.9) 0%, rgba(9, 3, 28, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-text {
+            margin-top: var(--spacing-sm);
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Picker Styles */
+        .emoji-picker,
+        .gif-picker {
+            position: absolute;
+            bottom: 70px;
+			background: radial-gradient(50% 50% at 65% 50%, rgba(36, 26, 76, 1) 0%, rgba(9, 3, 28, 1) 100%);
+            left: var(--spacing-sm);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-glass);
+            padding: var(--spacing-sm);
+            z-index: 10;
+            display: none;
+            max-width: 380px;
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .emoji-picker.show,
+        .gif-picker.show {
+            display: block;
+        }
+
+        .emoji-categories {
+            display: flex;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: var(--spacing-xs);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .emoji-category {
+            font-size: 16px;
+            margin-right: var(--spacing-sm);
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: var(--spacing-xs);
+            border-radius: var(--border-radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .emoji-category:hover,
+        .emoji-category.active {
+            color: var(--colorful);
+            background: var(--hover-color);
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: var(--spacing-xs);
+        }
+
+        .emoji {
+            font-size: 20px;
+            cursor: pointer;
+            text-align: center;
+            padding: var(--spacing-xs);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .emoji:hover {
+            background: var(--hover-color);
+            transform: scale(1.1);
+        }
+
+        .gif-search {
+            margin-bottom: var(--spacing-sm);
+            width: 100%;
+        }
+
+        .gif-search input {
+            width: 100%;
+            padding: var(--spacing-xs);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: var(--text-primary);
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .gif-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .gif-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-sm);
+        }
+
+        .gif-item {
+            cursor: pointer;
+            border-radius: var(--border-radius-sm);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .gif-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gif-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .message img.gif-content {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: var(--spacing-xs);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--glass-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(162, 124, 238, 0.8);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-sm);
+            }
+
+            .app-title {
+                font-size: 1.5rem;
+            }
+
+            .wallet-section {
+                flex-direction: column;
+                gap: var(--spacing-xs);
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .emoji-picker,
+            .gif-picker {
+                max-width: 320px;
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
             <div class="app-title">TezTrollBox</div>
             <div class="wallet-section">
-               <div class="wallet-address" id="wallet-address">Anon</div>
-               <button class="connect-btn" id="connect-wallet">
-               Connect Wallet
-               </button>
+                <div class="wallet-address" id="wallet-address">Anon</div>
+                <button class="connect-btn" id="connect-wallet">
+                    Connect Wallet
+                </button>
             </div>
-         </div>
-         <div class="theme-toggle">
-            <button class="toggle-switch" id="theme-toggle">
-               <div class="toggle-slider">
-                  <i class="fas fa-moon" id="theme-icon"></i>
-               </div>
-            </button>
-         </div>
-         <div class="chat-container">
+        </div>
+
+        <div class="chat-container">
             <div class="messages-container" id="messages-container">
-               <div class="loading" id="loading-messages">
-                  <div class="spinner"></div>
-                  <span>Loading messages...</span>
-               </div>
+                <div class="loading" id="loading-messages">
+                    <div class="spinner"></div>
+                    <span>Loading messages...</span>
+                </div>
+                
+               
             </div>
+
             <div class="reply-preview" id="reply-preview">
-               <div class="reply-preview-text">
-                  <span><i class="fas fa-reply"></i> Replying to: </span>
-                  <span id="reply-text"></span>
-               </div>
-               <button class="cancel-reply" id="cancel-reply">
-               <i class="fas fa-times"></i>
-               </button>
+                <div class="reply-preview-text">
+                    <span><i class="fas fa-reply"></i> Replying to: </span>
+                    <span id="reply-text"></span>
+                </div>
+                <button class="cancel-reply" id="cancel-reply">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+
             <div class="input-container">
-               <div style="width: 100%">
-                  <div class="input-toolbar">
-                     <button class="toolbar-btn" id="emoji-btn" title="Emoji">
-                     <i class="far fa-smile"></i>
-                     </button>
-                     <button class="toolbar-btn" id="gif-btn" title="GIF">
-                     <i class="fas fa-film"></i>
-                     </button>
-                  </div>
-                  <div style="display: flex">
-                     <textarea
-                        class="message-input"
-                        id="message-input"
-                        placeholder="Type a message..."
-                        rows="1"
+                <div style="width: 100%">
+                    <div class="input-toolbar">
+                        <button class="toolbar-btn" id="emoji-btn" title="Emoji">
+                            😀
+                        </button>
+                        <button class="toolbar-btn" id="gif-btn" title="GIF">
+                            🎬
+                        </button>
+                    </div>
+                    <div style="display: flex">
+                        <textarea
+                            class="message-input"
+                            id="message-input"
+                            placeholder="Type a message..."
+                            rows="1"
                         ></textarea>
-                     <button class="send-btn" id="send-btn" disabled>
-                     <i class="fas fa-paper-plane"></i>
-                     </button>
-                  </div>
-               </div>
-               <!-- Emoji Picker -->
-               <div class="emoji-picker" id="emoji-picker">
-                  <div class="emoji-categories">
-                     <div class="emoji-category active" data-category="recent">🕒</div>
-                     <div class="emoji-category" data-category="smileys">😀</div>
-                     <div class="emoji-category" data-category="people">👋</div>
-                     <div class="emoji-category" data-category="animals">🐶</div>
-                     <div class="emoji-category" data-category="food">🍎</div>
-                     <div class="emoji-category" data-category="travel">✈️</div>
-                     <div class="emoji-category" data-category="activities">⚽</div>
-                     <div class="emoji-category" data-category="objects">💡</div>
-                     <div class="emoji-category" data-category="symbols">❤️</div>
-                  </div>
-                  <div class="emoji-grid" id="emoji-grid"></div>
-               </div>
-               <!-- GIF Picker -->
-               <div class="gif-picker" id="gif-picker">
-                  <div class="gif-search">
-                     <input type="text" id="gif-search" placeholder="Search GIFs..." />
-                  </div>
-                  <div class="gif-grid" id="gif-grid">
-                     <div class="loading" id="loading-gifs" style="display: none">
-                        <div class="spinner"></div>
-                        <span>Loading GIFs...</span>
-                     </div>
-                  </div>
-               </div>
+                        <button class="send-btn" id="send-btn" disabled>
+                            ➤
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Emoji Picker -->
+                <div class="emoji-picker" id="emoji-picker">
+                    <div class="emoji-categories">
+                        <div class="emoji-category active" data-category="recent">🕒</div>
+                        <div class="emoji-category" data-category="smileys">😀</div>
+                        <div class="emoji-category" data-category="people">👋</div>
+                        <div class="emoji-category" data-category="animals">🐶</div>
+                        <div class="emoji-category" data-category="food">🍎</div>
+                        <div class="emoji-category" data-category="travel">✈️</div>
+                        <div class="emoji-category" data-category="activities">⚽</div>
+                        <div class="emoji-category" data-category="objects">💡</div>
+                        <div class="emoji-category" data-category="symbols">❤️</div>
+                    </div>
+                    <div class="emoji-grid" id="emoji-grid">
+                        <!-- Emojis will be populated by JavaScript -->
+                        <div class="emoji">😀</div>
+                        <div class="emoji">😂</div>
+                        <div class="emoji">🤣</div>
+                        <div class="emoji">😍</div>
+                        <div class="emoji">🥳</div>
+                        <div class="emoji">😎</div>
+                        <div class="emoji">🤖</div>
+                        <div class="emoji">👻</div>
+                        <div class="emoji">🚀</div>
+                        <div class="emoji">💎</div>
+                        <div class="emoji">🌟</div>
+                        <div class="emoji">✨</div>
+                        <div class="emoji">🔥</div>
+                        <div class="emoji">💯</div>
+                        <div class="emoji">🎉</div>
+                        <div class="emoji">🌈</div>
+                    </div>
+                </div>
+
+                <!-- GIF Picker -->
+                <div class="gif-picker" id="gif-picker">
+                    <div class="gif-search">
+                        <input type="text" id="gif-search" placeholder="Search GIFs..." />
+                    </div>
+                    <div class="gif-grid" id="gif-grid">
+                        <div class="loading" id="loading-gifs" style="display: none">
+                            <div class="spinner"></div>
+                            <span>Loading GIFs...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-         </div>
-      </div>
-      <div class="notification" id="notification">
-         <div class="notification-content">
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-content">
             <span class="notification-icon">
-            <i class="fas fa-info-circle"></i>
+                <i class="fas fa-info-circle"></i>
             </span>
             <span id="notification-message"></span>
-         </div>
-      </div>
-      <div class="loading-overlay" id="loading-overlay">
-         <div class="spinner"></div>
-         <div class="loading-text" id="loading-text">
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">
             Processing transaction...
-         </div>
-      </div>
-      <script src="js/main.js?v=1.51"></script>
-   </body>
+        </div>
+    </div>
+
+<script src="js/main.js?v=1.51"></script>
+</body>
 </html>
