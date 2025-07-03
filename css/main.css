@@ -296,6 +296,7 @@ a {
   transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
+
 }
 
 .message-input::-webkit-scrollbar {
