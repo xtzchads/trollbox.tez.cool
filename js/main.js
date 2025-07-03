@@ -35,67 +35,20 @@ const notificationMessage = document.getElementById(
         "notification-message");
 const loadingOverlay = document.getElementById("loading-overlay");
 const loadingText = document.getElementById("loading-text");
-let isDarkMode = false;
 
-// Add these DOM elements to your existing DOM Elements section
+
 const themeToggle = document.getElementById("theme-toggle");
 const themeIcon = document.getElementById("theme-icon");
 
-// Add this function to initialize theme
-function initializeTheme() {
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem("teztrollbox-theme");
-
-    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        isDarkMode = true;
-        enableDarkMode();
-    } else {
-        isDarkMode = false;
-        enableLightMode();
-    }
-}
-
-// Function to enable dark mode
-function enableDarkMode() {
-    document.documentElement.setAttribute("data-theme", "dark");
-    themeToggle.classList.add("active");
-    themeIcon.className = "fas fa-sun";
-    isDarkMode = true;
-    localStorage.setItem("teztrollbox-theme", "dark");
-}
-
-// Function to enable light mode
-function enableLightMode() {
-    document.documentElement.removeAttribute("data-theme"); // Remove completely, don't set to "light"
-    themeToggle.classList.remove("active");
-    themeIcon.className = "fas fa-moon";
-    isDarkMode = false;
-    localStorage.setItem("teztrollbox-theme", "light");
-}
-
-// Function to toggle theme
-function toggleTheme() {
-    if (isDarkMode) {
-        enableLightMode();
-    } else {
-        enableDarkMode();
-    }
-}
-
 function setupMessagePolling() {
-    // Initial load
     loadMessages();
-
-    // Set up interval for polling (every 3 seconds)
     setInterval(() => {
         loadMessages();
     }, 3000);
 }
-// Initialize
+
 async function init() {
-    initializeTheme();
     setupMessagePolling();
-    // Initialize Beacon SDK
     const {
         DAppClient
     } = beacon;
@@ -105,7 +58,6 @@ async function init() {
         preferredNetwork: NETWORK,
     });
 
-    // Check if user is already connected
     const activeAccount = await wallet.getActiveAccount();
     if (activeAccount) {
         userAddress = activeAccount.address;
@@ -114,7 +66,6 @@ async function init() {
         isConnected = true;
     }
 
-    // Event listeners
     connectWalletBtn.addEventListener("click", toggleWalletConnection);
     messageInput.addEventListener("input", handleInput);
     sendBtn.addEventListener("click", sendMessage);
@@ -122,23 +73,20 @@ async function init() {
     emojiBtn.addEventListener("click", toggleEmojiPicker);
     gifBtn.addEventListener("click", toggleGifPicker);
     gifSearch.addEventListener("input", debounce(searchGifs, 500));
+	initEmojiPicker();
     document.addEventListener("click", handleOutsideClick);
-    themeToggle.addEventListener("click", toggleTheme);
-    // Ensure reply preview is initially hidden
     replyPreview.classList.remove("show");
     document.querySelectorAll(".emoji-category").forEach((category) => {
         category.addEventListener("click", function () {
             loadEmojis(this.dataset.category);
         });
     });
-    // Auto-resize textarea
     messageInput.addEventListener("input", function () {
         this.style.height = "auto";
         this.style.height = this.scrollHeight + "px";
     });
 }
 function initEmojiPicker() {
-    // Initialize with the default category (recent/common)
     loadEmojis("recent");
 }
 
@@ -576,24 +524,40 @@ function toggleGifPicker() {
     searchGifs();
 }
 
-// Insert emoji into message input
 function insertEmoji(emoji) {
-    const cursorPos = messageInput.selectionStart;
+    const cursorPos = messageInput.selectionStart || messageInput.value.length;
     const textBefore = messageInput.value.substring(0, cursorPos);
     const textAfter = messageInput.value.substring(cursorPos);
 
     messageInput.value = textBefore + emoji + textAfter;
-    messageInput.selectionStart = messageInput.selectionEnd =
-        cursorPos + emoji.length;
+    
+    // Set cursor position after the emoji
+    const newCursorPos = cursorPos + emoji.length;
+    messageInput.setSelectionRange(newCursorPos, newCursorPos);
+    
     messageInput.focus();
-    handleInput();
-
-    // Trigger the auto-resize
-    messageInput.dispatchEvent(new Event("input"));
-
+    
+    // Trigger input event to update send button state
+    messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+    
+    // Trigger auto-resize
+    messageInput.style.height = 'auto';
+    messageInput.style.height = messageInput.scrollHeight + 'px';
+    
     // Close emoji picker
     emojiPicker.classList.remove("show");
     emojiBtn.classList.remove("active");
+}
+
+// Fix: Add event listeners to existing emojis in HTML and call loadEmojis on init
+function initEmojiPicker() {
+    // Add event listeners to existing emojis in the HTML
+    document.querySelectorAll('.emoji').forEach(emojiEl => {
+        emojiEl.addEventListener('click', () => insertEmoji(emojiEl.textContent));
+    });
+    
+    // Load the recent category (this will replace the HTML emojis with proper ones)
+    loadEmojis("recent");
 }
 
 // Insert GIF into message input
