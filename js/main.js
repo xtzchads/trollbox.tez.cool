@@ -75,6 +75,7 @@ async function init() {
     gifSearch.addEventListener("input", debounce(searchGifs, 500));
 	initEmojiPicker();
     document.addEventListener("click", handleOutsideClick);
+	document.addEventListener('visibilitychange', handleVisibilityChange);
     replyPreview.classList.remove("show");
     document.querySelectorAll(".emoji-category").forEach((category) => {
         category.addEventListener("click", function () {
@@ -88,6 +89,14 @@ async function init() {
 }
 function initEmojiPicker() {
     loadEmojis("recent");
+}
+
+function handleVisibilityChange() {
+    if (!document.hidden) {
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
+    }
 }
 
 // Load emojis by category
