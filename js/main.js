@@ -86,6 +86,11 @@ async function init() {
         this.style.height = "auto";
         this.style.height = this.scrollHeight + "px";
     });
+	window.addEventListener('focus', () => {
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 100);
+});
 }
 function initEmojiPicker() {
     loadEmojis("recent");
