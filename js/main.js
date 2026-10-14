@@ -1,1164 +1,633 @@
-// Configuration
-const CONTRACT_ADDRESS = "KT1Ek4Nxu4XpQykpGLwaNtUJSWKuVpXFUJoy";
-const NETWORK = "mainnet";
-const RPC_URL = "https://rpc.tzbeta.net";
-const TZKT_API_URL = "https://api.tzkt.io/v1/bigmaps/743755/keys";
+/**
+ * TezTrollBox — On-Chain Tezos Public Chat
+ * Contract: KT1Ek4Nxu4XpQykpGLwaNtUJSWKuVpXFUJoy (Mainnet)
+ * BigMap: 743755
+ */
 
-// State variables
-let wallet = null;
-let userAddress = null;
-let messages = [];
-let replyTo = null;
-let isConnected = false;
-let initialLoadComplete = false;
+(function () {
+  'use strict';
 
-// DOM Elements
-const connectWalletBtn = document.getElementById("connect-wallet");
-const walletAddressEl = document.getElementById("wallet-address");
-const messagesContainer = document.getElementById("messages-container");
-const messageInput = document.getElementById("message-input");
-const sendBtn = document.getElementById("send-btn");
-const loadingMessages = document.getElementById("loading-messages");
-const replyPreview = document.getElementById("reply-preview");
-const replyText = document.getElementById("reply-text");
-const cancelReply = document.getElementById("cancel-reply");
-const notification = document.getElementById("notification");
-const emojiBtn = document.getElementById("emoji-btn");
-const gifBtn = document.getElementById("gif-btn");
-const emojiPicker = document.getElementById("emoji-picker");
-const gifPicker = document.getElementById("gif-picker");
-const emojiGrid = document.getElementById("emoji-grid");
-const gifGrid = document.getElementById("gif-grid");
-const gifSearch = document.getElementById("gif-search");
-const loadingGifs = document.getElementById("loading-gifs");
-const notificationMessage = document.getElementById(
-        "notification-message");
-const loadingOverlay = document.getElementById("loading-overlay");
-const loadingText = document.getElementById("loading-text");
+  const CONTRACT_ADDRESS = 'KT1Ek4Nxu4XpQykpGLwaNtUJSWKuVpXFUJoy';
+  const BIGMAP_ID = '743755';
+  const RPC_URL = 'https://rpc.tzbeta.net';
+  const POLL_INTERVAL_MS = 3000;
+  const MAX_MESSAGE_LEN = 280;
 
+  const EMOJI_CATEGORIES = {
+    '😀': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐'],
+    '🚀': ['🚀','🛸','🌙','⭐','🌟','✨','⚡','🔥','💎','👑','🏆','🎯','🎲','🎮','🎰','📈','📉','💰','💸','🪙','🔮','🧬','🔭','📡','🛡️','⚔️','🧨','🎉','🎊'],
+    '👍': ['👍','👎','👊','✊','🤛','🤜','🤞','✌️','🤟','🤘','👌','🤌','🤏','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','💪','🙏','🤝','👏','🙌','👐'],
+    '❤️': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💯','💢','💥','💫','💦','💨'],
+    '🐸': ['🐸','🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🦅','🦆','🦉','🐺','🦄','🐝','🐛','🦋','🐢','🐍','🦖','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈'],
+    '🍕': ['🍕','🍔','🍟','🌭','🍿','🧂','🥓','🥚','🍳','🧇','🥞','🧈','🍞','🥐','🥨','🥯','🥖','🧀','🥗','🥙','🥪','🌮','🌯','🫔','🥫','🍖','🍗','🥩','🍠','🥟','🥠','🥡','🍱','🍘','🍙','🍚','🍛','🍜','🦪','🍣','🍤','🍥','🥮','🍢','🧆','🥘'],
+    '🍺': ['🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','☕','🍵','🧃','🥤','🧋','🍶','🍼','🥛'],
+    '🌍': ['🌍','🌎','🌏','🌐','🗺️','🧭','🏔️','⛰️','🌋','🗻','🏕️','🏖️','🏜️','🏝️','🏞️','🏟️','🏛️','🏗️','🧱','🪨','🪵','🛖','🏘️','🏚️','🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽'],
+    '🔣': ['✅','❌','⚠️','🚫','🔞','📵','♻️','⚜️','🔱','📛','🔰','⭕','☑️','✔️','✖️','➕','➖','➗','➰','➿','〽️','✳️','✴️','❇️','‼️','⁉️','❓','❔','❕','❗']
+  };
 
-const themeToggle = document.getElementById("theme-toggle");
-const themeIcon = document.getElementById("theme-icon");
+  // State
+  let dAppClient = null;
+  let activeAccount = null;
+  let messagesMap = new Map(); // id -> message object
+  let aliasCache = new Map();
+  let replyToId = null;
+  let pollTimer = null;
+  let isSending = false;
 
-function setupMessagePolling() {
-    loadMessages();
-    setInterval(() => {
-        loadMessages();
-    }, 3000);
-}
-
-async function init() {
-    setupMessagePolling();
-    const {
-        DAppClient
-    } = beacon;
-
-    wallet = new DAppClient({
-        name: "TezTrollBox",
-        preferredNetwork: NETWORK,
-    });
-
-    const activeAccount = await wallet.getActiveAccount();
-    if (activeAccount) {
-        userAddress = activeAccount.address;
-        walletAddressEl.textContent = shortenAddress(userAddress);
-        connectWalletBtn.textContent = "Disconnect";
-        isConnected = true;
+  // Load cached aliases from localStorage
+  try {
+    const savedAliases = localStorage.getItem('teztrollbox_aliases');
+    if (savedAliases) {
+      const parsed = JSON.parse(savedAliases);
+      Object.entries(parsed).forEach(([k, v]) => {
+        if (k && k !== 'undefined' && v) aliasCache.set(k, v);
+      });
     }
+  } catch (e) {}
 
-    connectWalletBtn.addEventListener("click", toggleWalletConnection);
-    messageInput.addEventListener("input", handleInput);
-    sendBtn.addEventListener("click", sendMessage);
-    cancelReply.addEventListener("click", cancelReplyToMessage);
-    emojiBtn.addEventListener("click", toggleEmojiPicker);
-    gifBtn.addEventListener("click", toggleGifPicker);
-    gifSearch.addEventListener("input", debounce(searchGifs, 500));
-	initEmojiPicker();
-    document.addEventListener("click", handleOutsideClick);
-	document.addEventListener('visibilitychange', handleVisibilityChange);
-    replyPreview.classList.remove("show");
-    document.querySelectorAll(".emoji-category").forEach((category) => {
-        category.addEventListener("click", function () {
-            loadEmojis(this.dataset.category);
-        });
-    });
-    messageInput.addEventListener("input", function () {
-        this.style.height = "auto";
-        this.style.height = this.scrollHeight + "px";
-    });
-	window.addEventListener('focus', () => {
+  function saveAliases() {
+    try {
+      const obj = {};
+      aliasCache.forEach((v, k) => {
+        if (k && k !== 'undefined' && v) obj[k] = v;
+      });
+      localStorage.setItem('teztrollbox_aliases', JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  // DOM Elements
+  const els = {};
+
+  function cacheElements() {
+    els.messagesViewport = document.getElementById('messagesViewport');
+    els.walletBtn = document.getElementById('walletBtn');
+    els.walletBadge = document.getElementById('walletBadge');
+    els.walletAvatar = document.getElementById('walletAvatar');
+    els.walletAddressText = document.getElementById('walletAddressText');
+    els.msgCountStat = document.getElementById('msgCountStat');
+    els.messageInput = document.getElementById('messageInput');
+    els.charCounter = document.getElementById('charCounter');
+    els.sendBtn = document.getElementById('sendBtn');
+    els.emojiBtn = document.getElementById('emojiBtn');
+    els.emojiPopover = document.getElementById('emojiPopover');
+    els.emojiCats = document.getElementById('emojiCats');
+    els.emojiGrid = document.getElementById('emojiGrid');
+    els.replyBanner = document.getElementById('replyBanner');
+    els.replyBannerText = document.getElementById('replyBannerText');
+    els.cancelReplyBtn = document.getElementById('cancelReplyBtn');
+    els.txStatusBar = document.getElementById('txStatusBar');
+    els.txStatusText = document.getElementById('txStatusText');
+    els.toastStack = document.getElementById('toastStack');
+  }
+
+  // Helpers
+  function shortAddr(addr) {
+    if (!addr || addr.length < 12) return addr || 'Anon';
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function isHex(str) {
+    return typeof str === 'string' && str.length > 0 && str.length % 2 === 0 && /^[0-9A-Fa-f]+$/.test(str);
+  }
+
+  function hexToUtf8(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    if (!isHex(raw)) return raw;
+    try {
+      const bytes = new Uint8Array(raw.length / 2);
+      for (let i = 0; i < raw.length; i += 2) {
+        bytes[i / 2] = parseInt(raw.substr(i, 2), 16);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+      return raw;
+    }
+  }
+
+  function utf8ToHex(str) {
+    const bytes = new TextEncoder().encode(str);
+    return Array.from(bytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const sameDay =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (sameDay) return timeStr;
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return `${dateStr}, ${timeStr}`;
+  }
+
+  function showToast(msg, type = 'info') {
+    if (!els.toastStack) return;
+    const item = document.createElement('div');
+    item.className = `toast-item ${type === 'error' ? 'error' : ''}`;
+    item.textContent = msg;
+    els.toastStack.appendChild(item);
     setTimeout(() => {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }, 100);
-});
-}
-function initEmojiPicker() {
-    loadEmojis("recent");
-}
+      item.style.opacity = '0';
+      item.style.transition = 'opacity 0.25s ease';
+      setTimeout(() => item.remove(), 260);
+    }, 3800);
+  }
 
-function handleVisibilityChange() {
-    if (!document.hidden) {
-        setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 100);
-    }
-}
-
-// Load emojis by category
-function loadEmojis(category) {
-    const emojiSets = {
-        recent: [
-            "😀",
-            "😃",
-            "😄",
-            "😁",
-            "😆",
-            "😅",
-            "😂",
-            "🤣",
-            "😊",
-            "😇",
-            "🙂",
-            "🙃",
-            "😉",
-            "😌",
-            "😍",
-            "🥰",
-            "😘",
-            "😗",
-            "😙",
-            "😚",
-            "😋",
-            "😛",
-            "😝",
-            "😜",
-            "🤪",
-            "🤨",
-            "🧐",
-            "🤓",
-            "😎",
-            "🤩",
-            "👍",
-            "👎",
-            "👏",
-            "🙌",
-        ],
-        smileys: [
-            "😀",
-            "😃",
-            "😄",
-            "😁",
-            "😆",
-            "😅",
-            "😂",
-            "🤣",
-            "☺️",
-            "😊",
-            "😇",
-            "🙂",
-            "🙃",
-            "😉",
-            "😌",
-            "😍",
-            "🥰",
-            "😘",
-            "😗",
-            "😙",
-            "😚",
-            "😋",
-            "😛",
-            "😝",
-            "😜",
-            "🤪",
-            "🤨",
-            "🧐",
-            "🤓",
-            "😎",
-            "🤩",
-            "🥳",
-            "😏",
-            "😒",
-            "😞",
-            "😔",
-            "😟",
-            "😕",
-            "🙁",
-            "☹️",
-            "😣",
-            "😖",
-            "😫",
-            "😩",
-            "🥺",
-            "😢",
-            "😭",
-            "😤",
-            "😠",
-            "😡",
-            "🤬",
-            "🤯",
-            "😳",
-            "🥵",
-            "🥶",
-            "😱",
-            "😨",
-            "😰",
-            "😥",
-            "😓",
-        ],
-        people: [
-            "👋",
-            "🤚",
-            "🖐",
-            "✋",
-            "🖖",
-            "👌",
-            "🤌",
-            "🤏",
-            "✌️",
-            "🤞",
-            "🤟",
-            "🤘",
-            "🤙",
-            "👈",
-            "👉",
-            "👆",
-            "🖕",
-            "👇",
-            "☝️",
-            "👍",
-            "👎",
-            "✊",
-            "👊",
-            "🤛",
-            "🤜",
-            "👏",
-            "🙌",
-            "👐",
-            "🤲",
-            "🤝",
-            "🙏",
-            "✍️",
-            "💅",
-            "🤳",
-            "💪",
-            "🦾",
-            "🦵",
-            "🦿",
-            "🦶",
-            "👂",
-            "🦻",
-            "👃",
-            "🫀",
-            "🫁",
-            "🧠",
-            "🦷",
-            "🦴",
-            "👀",
-            "👁",
-            "👅",
-        ],
-        animals: [
-            "🐶",
-            "🐱",
-            "🐭",
-            "🐹",
-            "🐰",
-            "🦊",
-            "🐻",
-            "🐼",
-            "🐻‍❄️",
-            "🐨",
-            "🐯",
-            "🦁",
-            "🐮",
-            "🐷",
-            "🐽",
-            "🐸",
-            "🐵",
-            "🙈",
-            "🙉",
-            "🙊",
-            "🐒",
-            "🐔",
-            "🐧",
-            "🐦",
-            "🐤",
-            "🐣",
-            "🐥",
-            "🦆",
-            "🦅",
-            "🦉",
-            "🦇",
-            "🐺",
-            "🐗",
-            "🐴",
-            "🦄",
-            "🐝",
-            "🪱",
-            "🐛",
-            "🦋",
-            "🐌",
-        ],
-        food: [
-            "🍎",
-            "🍐",
-            "🍊",
-            "🍋",
-            "🍌",
-            "🍉",
-            "🍇",
-            "🍓",
-            "🫐",
-            "🍈",
-            "🍒",
-            "🍑",
-            "🥭",
-            "🍍",
-            "🥥",
-            "🥝",
-            "🍅",
-            "🍆",
-            "🥑",
-            "🥦",
-            "🥬",
-            "🥒",
-            "🌶",
-            "🫑",
-            "🌽",
-            "🥕",
-            "🫒",
-            "🧄",
-            "🧅",
-            "🥔",
-            "🍠",
-            "🥐",
-            "🥯",
-            "🍞",
-            "🥖",
-            "🥨",
-            "🧀",
-            "🥚",
-            "🍳",
-            "🧈",
-        ],
-        travel: [
-            "✈️",
-            "🛫",
-            "🛬",
-            "💺",
-            "🚀",
-            "🛸",
-            "🚁",
-            "🛶",
-            "⛵️",
-            "🚤",
-            "🛥",
-            "🛳",
-            "⛴",
-            "🚢",
-            "🚗",
-            "🚕",
-            "🚙",
-            "🚌",
-            "🚎",
-            "🚓",
-            "🚑",
-            "🚒",
-            "🚐",
-            "🛻",
-            "🚚",
-            "🚛",
-            "🚜",
-        ],
-        activities: [
-            "⚽️",
-            "🏀",
-            "🏈",
-            "⚾️",
-            "🥎",
-            "🎾",
-            "🏐",
-            "🏉",
-            "🥏",
-            "🎱",
-            "🪀",
-            "🏓",
-            "🏸",
-            "🏒",
-            "🏑",
-            "🥍",
-            "🏏",
-            "🪃",
-            "🥅",
-            "⛳️",
-            "🪁",
-            "🏹",
-            "🎣",
-            "🤿",
-            "🥊",
-            "🥋",
-            "🎽",
-            "🛹",
-            "🛼",
-            "🛷",
-        ],
-        objects: [
-            "💡",
-            "🔦",
-            "🪔",
-            "🧯",
-            "🛢",
-            "💸",
-            "💵",
-            "💴",
-            "💶",
-            "💷",
-            "💰",
-            "💳",
-            "💎",
-            "⚖️",
-            "🪜",
-            "🧰",
-            "🪛",
-            "🔧",
-            "🔨",
-            "🪚",
-            "🔩",
-            "⚙️",
-            "🪤",
-            "🧱",
-            "🧲",
-        ],
-        symbols: [
-            "❤️",
-            "🧡",
-            "💛",
-            "💚",
-            "💙",
-            "💜",
-            "🖤",
-            "🤍",
-            "🤎",
-            "💔",
-            "❣️",
-            "💕",
-            "💞",
-            "💓",
-            "💗",
-            "💖",
-            "💘",
-            "💝",
-            "💟",
-            "☮️",
-            "✝️",
-            "☪️",
-            "☸️",
-            "✡️",
-            "🔯",
-            "🕎",
-            "☯️",
-            "☦️",
-            "🛐",
-        ],
-    };
-
-    // Clear the existing emojis
-    emojiGrid.innerHTML = "";
-
-    // Update active category
-    document.querySelectorAll(".emoji-category").forEach((cat) => {
-        if (cat.dataset.category === category) {
-            cat.classList.add("active");
-        } else {
-            cat.classList.remove("active");
-        }
-    });
-
-    // Add emojis from the selected category
-    const emojis = emojiSets[category] || emojiSets.recent;
-    emojis.forEach((emoji) => {
-        const emojiEl = document.createElement("div");
-        emojiEl.className = "emoji";
-        emojiEl.textContent = emoji;
-        emojiEl.addEventListener("click", () => insertEmoji(emoji));
-        emojiGrid.appendChild(emojiEl);
-    });
-}
-
-// Toggle emoji picker visibility
-function toggleEmojiPicker() {
-    if (gifPicker.classList.contains("show")) {
-        gifPicker.classList.remove("show");
-        gifBtn.classList.remove("active");
-    }
-
-    emojiPicker.classList.toggle("show");
-    emojiBtn.classList.toggle("active");
-
-    if (
-        emojiPicker.classList.contains("show") &&
-        emojiGrid.children.length === 0) {
-        initEmojiPicker();
-    }
-}
-function handleOutsideClick(event) {
-    // For Emoji Picker
-    if (emojiPicker.classList.contains("show")) {
-        // Check if click is outside the emoji picker and not on the emoji button
-        if (
-            !emojiPicker.contains(event.target) &&
-            event.target !== emojiBtn &&
-            !emojiBtn.contains(event.target)) {
-            emojiPicker.classList.remove("show");
-            emojiBtn.classList.remove("active");
-        }
-    }
-
-    // For GIF Picker
-    if (gifPicker.classList.contains("show")) {
-        // Check if click is outside the gif picker and not on the gif button
-        if (
-            !gifPicker.contains(event.target) &&
-            event.target !== gifBtn &&
-            !gifBtn.contains(event.target)) {
-            gifPicker.classList.remove("show");
-            gifBtn.classList.remove("active");
-        }
-    }
-}
-// Toggle GIF picker visibility
-function toggleGifPicker() {
-    if (emojiPicker.classList.contains("show")) {
-        emojiPicker.classList.remove("show");
-        emojiBtn.classList.remove("active");
-    }
-
-    gifPicker.classList.toggle("show");
-    gifBtn.classList.toggle("active");
-    searchGifs();
-}
-
-function insertEmoji(emoji) {
-    const cursorPos = messageInput.selectionStart || messageInput.value.length;
-    const textBefore = messageInput.value.substring(0, cursorPos);
-    const textAfter = messageInput.value.substring(cursorPos);
-
-    messageInput.value = textBefore + emoji + textAfter;
-    
-    // Set cursor position after the emoji
-    const newCursorPos = cursorPos + emoji.length;
-    messageInput.setSelectionRange(newCursorPos, newCursorPos);
-    
-    messageInput.focus();
-    
-    // Trigger input event to update send button state
-    messageInput.dispatchEvent(new Event('input', { bubbles: true }));
-    
-    // Trigger auto-resize
-    messageInput.style.height = 'auto';
-    messageInput.style.height = messageInput.scrollHeight + 'px';
-    
-    // Close emoji picker
-    emojiPicker.classList.remove("show");
-    emojiBtn.classList.remove("active");
-}
-
-// Fix: Add event listeners to existing emojis in HTML and call loadEmojis on init
-function initEmojiPicker() {
-    // Add event listeners to existing emojis in the HTML
-    document.querySelectorAll('.emoji').forEach(emojiEl => {
-        emojiEl.addEventListener('click', () => insertEmoji(emojiEl.textContent));
-    });
-    
-    // Load the recent category (this will replace the HTML emojis with proper ones)
-    loadEmojis("recent");
-}
-
-// Insert GIF into message input
-function insertGif(gifUrl) {
-    messageInput.value = (messageInput.value==='')?`${gifUrl}`:(messageInput.value+`\n${gifUrl}`);
-    messageInput.focus();
-    handleInput();
-
-    // Close GIF picker
-    gifPicker.classList.remove("show");
-    gifBtn.classList.remove("active");
-}
-
-function searchGifs() {
-    const query = gifSearch.value.trim() || "trending";
-    loadingGifs.style.display = "flex";
-    gifGrid.innerHTML = "";
-
-    //Cloudflare Worker URL
-    const WORKER_URL = "/fetchgif";
-
-    const endpoint = query !== "trending"
-         ? `${WORKER_URL}?type=search&q=${encodeURIComponent(query)}&limit=50`
-         : `${WORKER_URL}?type=trending&limit=50`;
-
-    // Fetch GIFs through Cloudflare Worker
-    fetch(endpoint)
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
-        return response.json();
-    })
-    .then((data) => {
-        loadingGifs.style.display = "none";
-        if (data.results && data.results.length > 0) {
-            data.results.forEach((gif) => {
-                const gifItem = document.createElement("div");
-                gifItem.className = "gif-item";
-                // Use downsized format for preview (smaller/faster)
-                const img = document.createElement("img");
-                img.src = gif.media_formats.tinygif.url;
-                img.alt = gif.title || "GIF";
-                img.loading = "lazy"; // Lazy loading for better performance
-                gifItem.appendChild(img);
-                gifItem.addEventListener("click", () => {
-                    // When clicked, insert the original GIF URL
-                    insertGif(gif.media_formats.gif.url);
-                });
-                gifGrid.appendChild(gifItem);
-            });
-        } else {
-            // No results
-            gifGrid.innerHTML =
-                '<div style="text-align: center; width: 100%; padding: 20px;">No GIFs found. Try a different search term.</div>';
-        }
-    })
-    .catch((error) => {
-        console.error("Error fetching GIFs:", error);
-        loadingGifs.style.display = "none";
-        gifGrid.innerHTML =
-            '<div style="text-align: center; width: 100%; padding: 20px;">Error loading GIFs. Please try again.</div>';
-    });
-}
-
-// Utility: Debounce function to limit API calls
-function debounce(func, delay) {
-    let timeout;
-    return function () {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), delay);
-    };
-}
-// Toggle wallet connection
-// Toggle wallet connection
-async function toggleWalletConnection() {
-    if (isConnected) {
-        // Disconnect wallet
-        await wallet.clearActiveAccount();
-        userAddress = null;
-        walletAddressEl.textContent = "Anon";
-        connectWalletBtn.textContent = "Connect Wallet";
-        isConnected = false;
-        handleInput();
-        loadingMessages.style.display = "flex";
-    } else {
-        // Connect wallet
-        try {
-            const permissions = await wallet.requestPermissions({
-                network: {
-                    type: NETWORK,
-                },
-            });
-            userAddress = permissions.address;
-            walletAddressEl.textContent = shortenAddress(userAddress);
-            connectWalletBtn.textContent = "Disconnect";
-            isConnected = true;
-            handleInput();
-            // Re-render messages to apply correct styles
-            renderMessages();
-        } catch (error) {
-            showNotification(
-                "Failed to connect wallet: " + error.message,
-                "error");
-        }
-    }
-}
-
-// Load messages from contract
-async function loadMessages() {
+  // Resolve TzKT alias
+  async function resolveAlias(address) {
+    if (!address) return 'Anon';
+    if (aliasCache.has(address)) return aliasCache.get(address);
+    aliasCache.set(address, shortAddr(address));
     try {
-        // Only show loading indicator on initial load (when no messages are displayed)
-        if (
-            messagesContainer.children.length === 0 ||
-            messagesContainer.innerHTML.includes("loading-messages")) {
-            loadingMessages.style.display = "flex";
-        }
-
-        // Fetch messages from tzkt API
-        const response = await axios.get(TZKT_API_URL);
-        const messagesData = response.data;
-
-        if (messagesData && messagesData.length > 0) {
-            const newMessages = [];
-
-            // Process messages
-            messagesData.forEach((item) => {
-                const messageData = item.value;
-                newMessages.push({
-                    id: parseInt(item.key),
-                    text: isHex(messageData.message)
-                     ? hexToString(messageData.message)
-                     : messageData.message,
-                    sender: messageData.author,
-                    replyTo:
-                    messageData.reply_to !== null
-                     ? {
-                        some: parseInt(messageData.reply_to)
-                    }
-                     : {
-                        none: ""
-                    },
-                    timestamp: new Date(messageData.timestamp),
-                });
-            });
-
-            // Sort messages by ID (which should correspond to chronological order)
-            newMessages.sort((a, b) => a.id - b.id);
-
-            // Check if we have new messages by comparing length or the latest message ID
-            const hasNewMessages =
-                newMessages.length !== messages.length ||
-                (newMessages.length > 0 &&
-                    messages.length > 0 &&
-                    newMessages[newMessages.length - 1].id !==
-                    messages[messages.length - 1].id);
-
-            // Update our messages array
-            messages = newMessages;
-
-            // Render if this is the first load, we just connected, or we have new messages
-            if (
-                messagesContainer.children.length === 0 ||
-                messagesContainer.innerHTML.includes("loading-messages") ||
-                hasNewMessages) {
-                renderMessages();
-            }
-        }
-
-        loadingMessages.style.display = "none";
-    } catch (error) {
-        console.error("Error loading messages:", error);
-        showNotification(
-            "Failed to load messages. Please try again.",
-            "error");
-        loadingMessages.style.display = "none";
-    }
-}
-
-// Render messages in the UI
-function renderMessages() {
-    messagesContainer.innerHTML = "";
-
-    // Handle empty state
-    if (messages.length === 0) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "loading";
-        emptyState.innerHTML = "No messages yet. Be the first to send a message!";
-        messagesContainer.appendChild(emptyState);
-        return;
-    }
-
-    // Helper functions
-    const isGifUrl = (url) => {
-        return url.match(/^https:\/\/media\d*\.giphy\.com\/media\//) !== null ||
-        url.match(/^https:\/\/media\.tenor\.com\//) !== null;
-    };
-
-    const createAvatar = (sender) => {
-        const avatarEl = document.createElement("div");
-        avatarEl.className = "avatar";
-
-        const avatarLink = document.createElement("a");
-        avatarLink.href = "https://tzkt.io/" + sender;
-        avatarLink.target = "_blank";
-
-        const avatarImg = document.createElement("img");
-        avatarImg.src = "https://services.tzkt.io/v1/avatars/" + escapeHTML(sender);
-        avatarImg.alt = "avatar";
-
-        // Prevent triggering message reply when clicking the avatar
-        avatarLink.addEventListener("click", (event) => event.stopPropagation());
-
-        avatarLink.appendChild(avatarImg);
-        avatarEl.appendChild(avatarLink);
-
-        return avatarEl;
-    };
-
-    const renderMessageContent = (message) => {
-    const urlRegex = /https?:\/\/[^\s]+/gi;
-    const text = message.text;
-	let processedContent = escapeHTML(text);
-    const urls = [...new Set(processedContent.match(urlRegex) || [])];
-    // If no URLs found, just return escaped text
-    if (urls.length === 0) {
-        return `<div class="message-content">${escapeHTML(text)}</div>`;
-    }
-    
-    // Process each URL found
-    urls.forEach(url => {
-        if (isGifUrl(url)) {
-            // Replace GIF URL with img tag
-            const gifElement = `<img src="${escapeHTML(url)}" class="gif-content" alt="GIF">`;
-            processedContent = processedContent.replaceAll(url, gifElement);
-        } else {
-            const youtubeVideoId = getYoutubeVideoId(url);
-            if (youtubeVideoId !== null) {
-                // Replace YouTube URL with iframe
-                const youtubeElement = `<div class="youtube-embed">
-                    <iframe 
-                        width="100%" 
-                        height="200" 
-                        src="https://www.youtube.com/embed/${escapeHTML(youtubeVideoId)}" 
-                        frameborder="0" 
-                        allowfullscreen>
-                    </iframe>
-                </div>`;
-                processedContent = processedContent.replaceAll(url, youtubeElement);
-            } else {
-                // Replace regular URL with anchor tag
-                const linkElement = `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHTML(url)}</a>`;
-                processedContent = processedContent.replaceAll(url, linkElement);
-            }
-        }
-    });
-	return `<div class="message-content">`+processedContent+`</div>`;
-    };
-
-    const renderReplyContent = (replyMessage) => {
-        if (!replyMessage)
-            return '';
-
-        let replyContent = `<div class="reply-to">
-      <div class="reply-sender">${escapeHTML(shortenAddress(replyMessage.sender))}</div>`;
-
-        if (isGifUrl(replyMessage.text)) {
-            replyContent += `<div class="reply-content">
-        <img src="${escapeHTML(replyMessage.text)}" class="gif-content" alt="GIF">
-      </div></div>`;
-        } else {
-            const youtubeVideoId = getYoutubeVideoId(replyMessage.text);
-            if (youtubeVideoId !== null) {
-                replyContent += `<div class="reply-content">
-          <div class="youtube-embed-small">
-            YouTube: ${escapeHTML(replyMessage.text.substring(0, 30))}...
-          </div>
-        </div></div>`;
-            } else {
-                replyContent += `<div class="reply-content">${escapeHTML(replyMessage.text)}</div></div>`;
-            }
-        }
-
-        return replyContent;
-    };
-
-    // Render each message
-    messages.forEach((message) => {
-        const messageContainer = document.createElement("div");
-        messageContainer.className = "message-container";
-        const isMyMessage = isConnected && message.sender === userAddress;
-
-        // Create message element
-        const messageEl = document.createElement("div");
-        messageEl.className = `message ${isMyMessage ? "my-message" : "other-message"}`;
-        messageEl.dataset.id = message.id;
-
-        // Find reply message if exists
-        let replyMessage = null;
-        if (message.replyTo && message.replyTo.some !== undefined) {
-            const replyId = parseInt(message.replyTo.some);
-            replyMessage = messages.find((m) => m.id === replyId);
-        }
-
-        // Build message HTML content
-        let html = `<div class="message-info">
-      <span class="message-sender">${escapeHTML(shortenAddress(message.sender))}</span>
-      <span class="message-time">${formatTime(message.timestamp)}</span>
-    </div>`;
-
-        // Add reply content if exists
-        html += renderReplyContent(replyMessage);
-
-        // Add message content
-        html += renderMessageContent(message);
-
-        messageEl.innerHTML = html;
-
-        // Add click event for reply functionality
- 	messageEl.addEventListener("click", function (event) {
-   	if (event.target.tagName === 'A')
-        return;
-        replyToMessage(parseInt(this.dataset.id));
+      const res = await fetch(`https://api.tzkt.io/v1/accounts/${address}`);
+      if (res.ok) {
+        const data = await res.json();
+        const display = data && data.alias ? data.alias : shortAddr(address);
+        aliasCache.set(address, display);
+        saveAliases();
+        // Update any rendered DOM nodes for this address
+        document.querySelectorAll(`[data-author-addr="${address}"]`).forEach(node => {
+          node.textContent = display;
         });
+        return display;
+      }
+    } catch (e) {}
+    return shortAddr(address);
+  }
 
-        // Add avatars based on message owner
-        if (!isMyMessage) {
-            messageContainer.appendChild(createAvatar(message.sender));
+  // Format message body (GIFs, YouTube, Links)
+  function formatMessageContent(rawText) {
+    const trimmed = (rawText || '').trim();
+
+    // Check if the entire message or a line contains a Giphy / Tenor GIF URL
+    const gifRegex = /https?:\/\/(?:media\d?\.giphy\.com|i\.giphy\.com|media\.tenor\.com|c\.tenor\.com)\/[^\s"'<>]+/i;
+    const gifMatch = trimmed.match(gifRegex);
+
+    // Check YouTube URL
+    const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/i;
+    const ytMatch = trimmed.match(ytRegex);
+
+    const textWithoutGif = gifMatch ? trimmed.replace(gifMatch[0], '').trim() : trimmed;
+    const safeText = escapeHtml(textWithoutGif).replace(
+      /(https?:\/\/[^\s"'<>]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="msg-link" onclick="event.stopPropagation()">$1</a>'
+    );
+
+    let html = safeText ? `<div class="msg-text">${safeText}</div>` : '';
+
+    if (gifMatch) {
+      const safeGifUrl = escapeHtml(gifMatch[0]);
+      html += `<img src="${safeGifUrl}" alt="GIF" class="msg-gif" onclick="event.stopPropagation()" />`;
+    } else if (ytMatch) {
+      const videoId = escapeHtml(ytMatch[1]);
+      html += `<div class="msg-youtube" onclick="event.stopPropagation()"><iframe src="https://www.youtube-nocookie.com/embed/${videoId}" allowfullscreen loading="lazy"></iframe></div>`;
+    }
+
+    return html;
+  }
+
+  // Fetch & Render Messages from BigMap 743755
+  async function fetchMessages(initial = false) {
+    try {
+      const res = await fetch(`https://api.tzkt.io/v1/bigmaps/${BIGMAP_ID}/keys?limit=1000`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const items = await res.json();
+
+      let hasNew = false;
+      const newSenders = new Set();
+
+      items.forEach(entry => {
+        if (!entry || !entry.value) return;
+        const id = Number(entry.key);
+        if (!messagesMap.has(id)) {
+          hasNew = true;
+          const sender = entry.value.author || entry.value.sender || '';
+          const decodedText = hexToUtf8(entry.value.message);
+          const replyTo = entry.value.reply_to !== null && entry.value.reply_to !== undefined
+            ? Number(entry.value.reply_to)
+            : null;
+          messagesMap.set(id, {
+            id,
+            sender,
+            text: decodedText,
+            timestamp: entry.value.timestamp,
+            replyTo
+          });
+          if (sender && !aliasCache.has(sender)) {
+            newSenders.add(sender);
+          }
         }
+      });
 
-        messageContainer.appendChild(messageEl);
+      if (els.msgCountStat) {
+        els.msgCountStat.textContent = `${messagesMap.size.toLocaleString()} msgs`;
+      }
 
-        if (isMyMessage) {
-            messageContainer.appendChild(createAvatar(message.sender));
-        }
+      if (initial || hasNew) {
+        renderMessages(initial);
+      }
 
-        messagesContainer.appendChild(messageContainer);
+      newSenders.forEach(addr => resolveAlias(addr));
+    } catch (err) {
+      if (initial && els.messagesViewport) {
+        els.messagesViewport.innerHTML = `
+          <div class="chat-state-box">
+            <div>Unable to load chat history from TzKT. Retrying automatically…</div>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function renderMessages(scrollToBottom = false) {
+    if (!els.messagesViewport) return;
+
+    const wasNearBottom =
+      els.messagesViewport.scrollHeight - els.messagesViewport.scrollTop - els.messagesViewport.clientHeight < 120;
+
+    const sorted = Array.from(messagesMap.values()).sort((a, b) => a.id - b.id);
+
+    if (sorted.length === 0) {
+      els.messagesViewport.innerHTML = `
+        <div class="chat-state-box">
+          <div>No messages yet. Connect your wallet to post the first on-chain message!</div>
+        </div>
+      `;
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    sorted.forEach(msg => {
+      const row = document.createElement('div');
+      const isOwn = activeAccount && activeAccount.address === msg.sender;
+      row.className = `msg-row${isOwn ? ' own-message' : ''}`;
+      row.id = `msg-${msg.id}`;
+      row.dataset.msgId = String(msg.id);
+
+      const authorName = aliasCache.get(msg.sender) || shortAddr(msg.sender);
+
+      let replyHtml = '';
+      if (msg.replyTo !== null && messagesMap.has(msg.replyTo)) {
+        const parent = messagesMap.get(msg.replyTo);
+        const parentAuthor = aliasCache.get(parent.sender) || shortAddr(parent.sender);
+        const snippet = parent.text.length > 70 ? parent.text.slice(0, 70) + '…' : parent.text;
+        replyHtml = `
+          <div class="msg-reply-quote" data-scroll-to="${parent.id}">
+            <span>↩</span>
+            <strong>${escapeHtml(parentAuthor)}</strong>
+            <span>${escapeHtml(snippet)}</span>
+          </div>
+        `;
+      }
+
+      row.innerHTML = `
+        <a class="msg-avatar-link" href="https://tzkt.io/${escapeHtml(msg.sender)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="View on TzKT">
+          <img class="msg-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(msg.sender)}" alt="" loading="lazy" />
+        </a>
+        <div class="msg-body">
+          <div class="msg-header">
+            <div class="msg-author-group">
+              <a class="msg-author" href="https://tzkt.io/${escapeHtml(msg.sender)}" target="_blank" rel="noopener noreferrer" data-author-addr="${escapeHtml(msg.sender)}" onclick="event.stopPropagation()">${escapeHtml(authorName)}</a>
+              <span class="msg-id-badge">#${msg.id}</span>
+            </div>
+            <div class="msg-meta-right">
+              <span class="msg-reply-hint">↩ Reply</span>
+              <span class="msg-time">${escapeHtml(formatTimestamp(msg.timestamp))}</span>
+            </div>
+          </div>
+          ${replyHtml}
+          ${formatMessageContent(msg.text)}
+        </div>
+      `;
+
+      // Click quote to jump to original message
+      const quoteEl = row.querySelector('.msg-reply-quote');
+      if (quoteEl) {
+        quoteEl.addEventListener('click', e => {
+          e.stopPropagation();
+          const targetId = quoteEl.getAttribute('data-scroll-to');
+          const targetNode = document.getElementById(`msg-${targetId}`);
+          if (targetNode) {
+            targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetNode.classList.remove('highlight-flash');
+            void targetNode.offsetWidth;
+            targetNode.classList.add('highlight-flash');
+          }
+        });
+      }
+
+      // Click message to reply
+      row.addEventListener('click', () => {
+        setReplyTo(msg.id);
+      });
+
+      fragment.appendChild(row);
     });
 
-    // Handle scrolling after initial load
-    if (!initialLoadComplete) {
-        const gifImages = messagesContainer.querySelectorAll('.gif-content');
+    els.messagesViewport.innerHTML = '';
+    els.messagesViewport.appendChild(fragment);
 
-        if (gifImages.length > 0) {
-            let loadedCount = 0;
+    if (scrollToBottom || wasNearBottom) {
+      const scrollToEnd = () => {
+        els.messagesViewport.scrollTop = els.messagesViewport.scrollHeight;
+      };
+      scrollToEnd();
+      requestAnimationFrame(scrollToEnd);
 
-            gifImages.forEach(img => {
-                if (img.complete) {
-                    loadedCount++;
-                    if (loadedCount === gifImages.length) {
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        initialLoadComplete = true;
-                    }
-                } else {
-                    img.addEventListener('load', () => {
-                        loadedCount++;
-                        if (loadedCount === gifImages.length) {
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                            initialLoadComplete = true;
-                        }
-                    });
-                }
-            });
-
-            // Fallback timeout in case images fail to load
-            setTimeout(() => {
-                if (!initialLoadComplete) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    initialLoadComplete = true;
-                }
-            }, 2000);
-        } else {
-            // No GIFs, scroll immediately
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            initialLoadComplete = true;
+      const gifImages = els.messagesViewport.querySelectorAll('.msg-gif');
+      gifImages.forEach(img => {
+        if (!img.complete) {
+          img.addEventListener('load', scrollToEnd, { once: true });
+          img.addEventListener('error', scrollToEnd, { once: true });
         }
+      });
+
+      if (scrollToBottom) {
+        setTimeout(scrollToEnd, 300);
+        setTimeout(scrollToEnd, 1000);
+        setTimeout(scrollToEnd, 2000);
+      }
     }
-}
+  }
 
-// Reply to a message
-function replyToMessage(messageId) {
-    const message = messages.find((m) => m.id === messageId);
-    if (message) {
-        replyTo = messageId;
-        replyText.textContent =
-            message.text.substring(0, 30) +
-            (message.text.length > 30 ? "..." : "");
-        replyPreview.classList.add("show");
-        messageInput.focus();
+  function setReplyTo(msgId) {
+    if (!activeAccount) {
+      showToast('Connect your Tezos wallet first to reply.', 'info');
+      return;
+    }
+    const target = messagesMap.get(msgId);
+    if (!target) return;
+    replyToId = msgId;
+    const author = aliasCache.get(target.sender) || shortAddr(target.sender);
+    const snippet = target.text.length > 60 ? target.text.slice(0, 60) + '…' : target.text;
+    els.replyBannerText.innerHTML = `Replying to <strong>${escapeHtml(author)}</strong> (#${msgId}): ${escapeHtml(snippet)}`;
+    els.replyBanner.classList.add('active');
+    els.messageInput.focus();
+  }
 
-        // Debug - Make sure this function is actually being called
-        console.log("Replying to message:", messageId, message.text);
+  function clearReplyTo() {
+    replyToId = null;
+    if (els.replyBanner) els.replyBanner.classList.remove('active');
+  }
+
+  // Wallet Connection (Beacon SDK)
+  function initWallet() {
+    if (typeof beacon === 'undefined' || !beacon.DAppClient) {
+      console.warn('Beacon SDK not loaded');
+      return;
+    }
+    dAppClient = new beacon.DAppClient({
+      name: 'TezTrollBox',
+      preferredNetwork: beacon.NetworkType.MAINNET
+    });
+
+    dAppClient.getActiveAccount().then(acc => {
+      if (acc) {
+        activeAccount = acc;
+        updateWalletUI();
+      }
+    }).catch(() => {});
+  }
+
+  function updateWalletUI() {
+    if (activeAccount && activeAccount.address) {
+      const addr = activeAccount.address;
+      els.walletBadge.classList.add('visible');
+      els.walletAvatar.src = `https://services.tzkt.io/v1/avatars/${addr}`;
+      els.walletAddressText.textContent = shortAddr(addr);
+      resolveAlias(addr).then(alias => {
+        els.walletAddressText.textContent = alias;
+      });
+
+      els.walletBtn.textContent = 'Disconnect';
+      els.walletBtn.classList.add('disconnect');
+      els.messageInput.disabled = false;
+      els.messageInput.placeholder = 'Write an on-chain message… (Enter to send)';
+      els.sendBtn.disabled = false;
     } else {
-        console.error("Message not found:", messageId);
+      els.walletBadge.classList.remove('visible');
+      els.walletBtn.textContent = 'Connect Wallet';
+      els.walletBtn.classList.remove('disconnect');
+      els.messageInput.disabled = true;
+      els.messageInput.placeholder = 'Connect your Tezos wallet to chat on-chain…';
+      els.sendBtn.disabled = true;
+      clearReplyTo();
     }
-}
+    if (messagesMap.size > 0) {
+      renderMessages(false);
+    }
+  }
 
-// Cancel reply to message
-function cancelReplyToMessage() {
-    replyTo = null;
-    replyPreview.classList.remove("show");
-}
-
-async function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text || !isConnected)
-        return;
-
+  async function handleWalletClick() {
+    if (!dAppClient) {
+      showToast('Wallet SDK unavailable.', 'error');
+      return;
+    }
     try {
-        showLoading("Sending message...");
+      if (activeAccount) {
+        await dAppClient.clearActiveAccount();
+        activeAccount = null;
+        updateWalletUI();
+        showToast('Wallet disconnected.');
+      } else {
+        const perms = await dAppClient.requestPermissions({
+          network: {
+            type: beacon.NetworkType.MAINNET,
+            rpcUrl: RPC_URL
+          }
+        });
+        activeAccount = perms.account || (await dAppClient.getActiveAccount());
+        updateWalletUI();
+        showToast('Wallet connected!');
+      }
+    } catch (err) {
+      showToast('Wallet connection cancelled.', 'error');
+    }
+  }
 
-        // Prepare message parameters
-        let replyToValue;
-        if (replyTo !== null && replyTo !== undefined) {
-            // When there is a reply_to value, format it as Some(nat)
-            replyToValue = {
-                prim: "Some",
-                args: [{
-                        int: replyTo.toString()
-                    }
-                ],
-            };
-        } else {
-            // When there is no reply_to value, format it as None
-            replyToValue = {
-                prim: "None"
-            };
+  // Send On-Chain Message
+  async function sendMessage(customText) {
+    if (isSending) return;
+    if (!activeAccount || !dAppClient) {
+      showToast('Please connect your wallet first.', 'error');
+      return;
+    }
+    const text = (customText !== undefined ? customText : els.messageInput.value).trim();
+    if (!text) return;
+    if (text.length > MAX_MESSAGE_LEN) {
+      showToast(`Message exceeds ${MAX_MESSAGE_LEN} characters.`, 'error');
+      return;
+    }
+
+    const encodedHex = utf8ToHex(text);
+    const valuePayload = replyToId !== null
+      ? {
+          prim: 'Pair',
+          args: [
+            { string: encodedHex },
+            { prim: 'Some', args: [{ int: String(replyToId) }] }
+          ]
         }
-
-        // Prepare the transaction
-        const params = {
-            kind: beacon.TezosOperationType.TRANSACTION,
-            source: userAddress,
-            destination: CONTRACT_ADDRESS,
-            amount: "0",
-            parameters: {
-                entrypoint: "post_message", // Use the actual entry point name from your contract
-                value: {
-                    prim: "Pair",
-                    args: [{
-                            string: hex(text)
-                        }, // message parameter
-                        replyToValue, // reply_to parameter (option type)
-                    ],
-                },
-            },
+      : {
+          prim: 'Pair',
+          args: [
+            { string: encodedHex },
+            { prim: 'None' }
+          ]
         };
 
-        // Send the transaction
-        const op = await wallet.requestOperation({
-            operationDetails: [params],
-        });
+    try {
+      isSending = true;
+      els.sendBtn.disabled = true;
+      els.txStatusText.textContent = 'Confirm message in your wallet…';
+      els.txStatusBar.classList.add('active');
 
-        // Wait for confirmation
-        await waitForConfirmation(op.transactionHash);
-
-        // Clear input
-        messageInput.value = "";
-        messageInput.style.height = "auto";
-        cancelReplyToMessage();
-
-        showNotification("Message sent successfully", "success");
-    } catch (error) {
-        console.error("Error sending message:", error);
-        showNotification(
-            "Failed to send message: " + (error.message || "Unknown error"),
-            "error");
-    } finally {
-        hideLoading();
-    }
-}
-
-// Wait for transaction confirmation
-async function waitForConfirmation(hash, attempts = 10) {
-    for (let i = 0; i < attempts; i++) {
-        try {
-            const response = await axios.get(
-`${RPC_URL}/chains/main/blocks/head/operations`);
-            const operations = response.data.flatMap((group) => group);
-
-            for (const group of response.data) {
-                for (const op of group) {
-                    if (op.hash === hash) {
-                        loadMessages();
-                        return true;
-                    }
-                }
+      const response = await dAppClient.requestOperation({
+        operationDetails: [
+          {
+            kind: beacon.TezosOperationType.TRANSACTION,
+            destination: CONTRACT_ADDRESS,
+            amount: '0',
+            parameters: {
+              entrypoint: 'post_message',
+              value: valuePayload
             }
-        } catch (error) {
-            console.error("Error checking confirmation:", error);
+          }
+        ]
+      });
+
+      if (customText === undefined) {
+        els.messageInput.value = '';
+        updateCharCounter();
+      }
+      clearReplyTo();
+
+      els.txStatusText.textContent = 'Broadcasting on Tezos Mainnet… waiting for block inclusion';
+      await waitForTxConfirmation(response.transactionHash);
+      els.txStatusBar.classList.remove('active');
+      showToast('Message confirmed on-chain!');
+      await fetchMessages(true);
+    } catch (err) {
+      els.txStatusBar.classList.remove('active');
+      showToast('Transaction cancelled or failed.', 'error');
+    } finally {
+      isSending = false;
+      if (activeAccount) els.sendBtn.disabled = false;
+    }
+  }
+
+  async function waitForTxConfirmation(txHash) {
+    if (!txHash) return;
+    const maxAttempts = 25;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 2500));
+      try {
+        const res = await fetch(`https://api.tzkt.io/v1/operations/${txHash}`);
+        if (res.ok) {
+          const ops = await res.json();
+          if (Array.isArray(ops) && ops.length > 0 && ops[0].status === 'applied') {
+            return true;
+          }
         }
-
-        // Wait for 5 seconds before next attempt
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+      } catch (e) {}
     }
+    return false;
+  }
 
-    // If we've waited long enough, assume it's confirmed
-    return true;
-}
+  // Emoji & GIF Pickers
+  function initEmojiPicker() {
+    const categories = Object.keys(EMOJI_CATEGORIES);
+    categories.forEach((cat, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `emoji-cat-btn${idx === 0 ? ' active' : ''}`;
+      btn.textContent = cat;
+      btn.addEventListener('click', () => {
+        els.emojiCats.querySelectorAll('.emoji-cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderEmojiCategory(cat);
+      });
+      els.emojiCats.appendChild(btn);
+    });
+    renderEmojiCategory(categories[0]);
+  }
 
-// Handle input changes
-function handleInput() {
-    const text = messageInput.value.trim();
-    sendBtn.disabled = !text || !isConnected;
-}
+  function renderEmojiCategory(cat) {
+    els.emojiGrid.innerHTML = '';
+    (EMOJI_CATEGORIES[cat] || []).forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-item';
+      btn.textContent = emoji;
+      btn.addEventListener('click', () => {
+        if (els.messageInput.disabled) return;
+        els.messageInput.value += emoji;
+        updateCharCounter();
+        els.messageInput.focus();
+      });
+      els.emojiGrid.appendChild(btn);
+    });
+  }
 
-// Show notification
-function showNotification(message, type = "info") {
-    notificationMessage.textContent = message;
-    notification.className = `notification ${type} show`;
+  function updateCharCounter() {
+    const len = els.messageInput.value.length;
+    els.charCounter.textContent = `${len}/${MAX_MESSAGE_LEN}`;
+    els.charCounter.classList.toggle('warn', len > 240 && len <= MAX_MESSAGE_LEN);
+    els.charCounter.classList.toggle('limit', len > MAX_MESSAGE_LEN);
+  }
 
-    // Hide after 3 seconds
-    setTimeout(() => {
-        notification.classList.remove("show");
-    }, 3000);
-}
+  function bindEvents() {
+    els.walletBtn.addEventListener('click', handleWalletClick);
+    els.cancelReplyBtn.addEventListener('click', clearReplyTo);
 
-// Show loading overlay
-function showLoading(text) {
-    loadingText.textContent = text || "Processing...";
-    loadingOverlay.classList.add("show");
-}
+    els.messageInput.addEventListener('input', updateCharCounter);
+    els.messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      } else if (e.key === 'Escape') {
+        clearReplyTo();
+      }
+    });
 
-// Hide loading overlay
-function hideLoading() {
-    loadingOverlay.classList.remove("show");
-}
+    els.sendBtn.addEventListener('click', () => sendMessage());
 
-// Utility: Format time
-function formatTime(date) {
-    return moment(date).format("MMM DD, HH:mm");
-}
+    els.emojiBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = els.emojiPopover.classList.toggle('open');
+      els.emojiBtn.classList.toggle('active', open);
+    });
 
-// Utility: Shorten address
-function shortenAddress(address) {
-    return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
-}
+    document.addEventListener('click', e => {
+      if (!els.emojiPopover.contains(e.target) && e.target !== els.emojiBtn) {
+        els.emojiPopover.classList.remove('open');
+        els.emojiBtn.classList.remove('active');
+      }
+    });
+  }
 
-// Utility: Escape HTML
-function escapeHTML(str) {
-    return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function hex(str) {
-    return Array.from(new TextEncoder().encode(str))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function hexToString(hex) {
-    const bytes = [];
-    for (let i = 0; i < hex.length; i += 2) {
-        bytes.push(parseInt(hex.substr(i, 2), 16));
-    }
-    return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
-}
-
-function isHex(str) {
-    return /^[0-9A-Fa-f]+$/.test(str);
-}
-
-function getYoutubeVideoId(url) {
-    // Handle youtube.com links
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?/;
-    const youtubeMatch = url.match(youtubeRegex);
-
-    if (youtubeMatch) {
-        return youtubeMatch[1];
-    }
-
-    // Handle youtu.be links
-    const youtuBeRegex = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?.*)?/;
-    const youtuBeMatch = url.match(youtuBeRegex);
-
-    if (youtuBeMatch) {
-        return youtuBeMatch[1];
-    }
-
-    return null;
-}
-
-// Initialize on load
-document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener('DOMContentLoaded', () => {
+    cacheElements();
+    initEmojiPicker();
+    bindEvents();
+    initWallet();
+    fetchMessages(true);
+    pollTimer = setInterval(() => fetchMessages(false), POLL_INTERVAL_MS);
+  });
+})();
