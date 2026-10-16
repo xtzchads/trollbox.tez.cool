@@ -69,9 +69,13 @@
     els.charCounter = document.getElementById('charCounter');
     els.sendBtn = document.getElementById('sendBtn');
     els.emojiBtn = document.getElementById('emojiBtn');
+    els.gifBtn = document.getElementById('gifBtn');
     els.emojiPopover = document.getElementById('emojiPopover');
     els.emojiCats = document.getElementById('emojiCats');
     els.emojiGrid = document.getElementById('emojiGrid');
+    els.gifPopover = document.getElementById('gifPopover');
+    els.gifSearchInput = document.getElementById('gifSearchInput');
+    els.gifGrid = document.getElementById('gifGrid');
     els.replyBanner = document.getElementById('replyBanner');
     els.replyBannerText = document.getElementById('replyBannerText');
     els.cancelReplyBtn = document.getElementById('cancelReplyBtn');
@@ -585,6 +589,73 @@
     });
   }
 
+  async function loadGifs(query = '') {
+    if (!els.gifGrid) return;
+    els.gifGrid.innerHTML = `<div class="chat-state-box"><div class="spinner-ring-sm"></div></div>`;
+    try {
+      const endpointBase = window.location.hostname.includes('trollbox')
+        ? '/fetchgif'
+        : 'https://trollbox.tez.cool/fetchgif';
+      const q = query.trim();
+      const url = q
+        ? `${endpointBase}?type=search&q=${encodeURIComponent(q)}&limit=50`
+        : `${endpointBase}?type=trending&limit=50`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('GIF fetch failed');
+      const data = await res.json();
+      const list = Array.isArray(data?.results) && data.results.length > 0
+        ? data.results
+        : Array.isArray(data?.data)
+          ? data.data
+          : [];
+
+      if (list.length === 0) {
+        els.gifGrid.innerHTML = `<div class="chat-state-box">No GIFs found</div>`;
+        return;
+      }
+
+      els.gifGrid.innerHTML = '';
+      list.forEach(item => {
+        const previewUrl =
+          item.media_formats?.tinygif?.url ||
+          item.media?.[0]?.tinygif?.url ||
+          item.images?.fixed_height_small?.url ||
+          item.images?.fixed_height?.url ||
+          item.images?.original?.url;
+        const sendUrl =
+          item.media_formats?.gif?.url ||
+          item.media?.[0]?.gif?.url ||
+          item.images?.fixed_height?.url ||
+          item.images?.original?.url ||
+          previewUrl;
+        if (!previewUrl || !/^https:\/\//i.test(previewUrl) || !/^https:\/\//i.test(sendUrl)) return;
+
+        const img = document.createElement('img');
+        img.src = previewUrl;
+        img.className = 'gif-item';
+        img.loading = 'lazy';
+        img.alt = item.title || item.content_description || 'GIF';
+        img.addEventListener('click', () => {
+          if (els.messageInput.disabled) {
+            showToast('Connect your Tezos wallet first to send a GIF.', 'info');
+            return;
+          }
+          els.gifPopover.classList.remove('open');
+          els.gifBtn.classList.remove('active');
+          els.messageInput.value = els.messageInput.value.trim()
+            ? `${els.messageInput.value.trim()} ${sendUrl}`
+            : sendUrl;
+          updateCharCounter();
+          els.messageInput.focus();
+        });
+        els.gifGrid.appendChild(img);
+      });
+    } catch (e) {
+      els.gifGrid.innerHTML = `<div class="chat-state-box">Error loading GIFs. Please try again.</div>`;
+    }
+  }
+
   function updateCharCounter() {
     const len = els.messageInput.value.length;
     els.charCounter.textContent = `${len}/${MAX_MESSAGE_LEN}`;
@@ -612,12 +683,44 @@
       e.stopPropagation();
       const open = els.emojiPopover.classList.toggle('open');
       els.emojiBtn.classList.toggle('active', open);
+      if (els.gifPopover) els.gifPopover.classList.remove('open');
+      if (els.gifBtn) els.gifBtn.classList.remove('active');
     });
+
+    if (els.gifBtn && els.gifPopover) {
+      els.gifBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = els.gifPopover.classList.toggle('open');
+        els.gifBtn.classList.toggle('active', open);
+        els.emojiPopover.classList.remove('open');
+        els.emojiBtn.classList.remove('active');
+        if (open && els.gifGrid && els.gifGrid.children.length === 0) {
+          loadGifs(els.gifSearchInput ? els.gifSearchInput.value : '');
+        }
+        if (open && els.gifSearchInput) {
+          els.gifSearchInput.focus();
+        }
+      });
+    }
+
+    if (els.gifSearchInput) {
+      let gifDebounce = null;
+      els.gifSearchInput.addEventListener('input', () => {
+        clearTimeout(gifDebounce);
+        gifDebounce = setTimeout(() => {
+          loadGifs(els.gifSearchInput.value);
+        }, 350);
+      });
+    }
 
     document.addEventListener('click', e => {
       if (!els.emojiPopover.contains(e.target) && e.target !== els.emojiBtn) {
         els.emojiPopover.classList.remove('open');
         els.emojiBtn.classList.remove('active');
+      }
+      if (els.gifPopover && !els.gifPopover.contains(e.target) && e.target !== els.gifBtn) {
+        els.gifPopover.classList.remove('open');
+        els.gifBtn.classList.remove('active');
       }
     });
   }
