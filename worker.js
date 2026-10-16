@@ -19,7 +19,8 @@ async function handleRequest(request) {
   const url = new URL(request.url)
   const searchType = url.searchParams.get('type') || 'trending'
   const query = url.searchParams.get('q') || ''
-  const limit = url.searchParams.get('limit') || '50'
+  const rawLimit = parseInt(url.searchParams.get('limit'), 10)
+  const limit = Number.isFinite(rawLimit) ? Math.min(50, Math.max(1, rawLimit)) : 50
 
   let giphyUrl = ''
   if (searchType === 'search' && query) {
