@@ -3,12 +3,44 @@ addEventListener('fetch', event => {
   event.respondWith(handleRequest(event))
 })
 
+const FALLBACK_GIPHY_KEYS = [
+  'GlVGYHkr3WSBnllca54iNt0yFbjz7L65',
+  'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh'
+]
+
+async function fetchFromGiphy(searchType, query, limit) {
+  const keysToTry = []
+  if (typeof GIPHY_KEY !== 'undefined' && GIPHY_KEY) {
+    keysToTry.push(GIPHY_KEY)
+  }
+  FALLBACK_GIPHY_KEYS.forEach(k => {
+    if (!keysToTry.includes(k)) keysToTry.push(k)
+  })
+
+  let lastError = null
+  for (const apiKey of keysToTry) {
+    const giphyUrl = searchType === 'search' && query
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(query)}&limit=${limit}&rating=g`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=${limit}&rating=g`
+
+    try {
+      const res = await fetch(giphyUrl)
+      if (res.ok) {
+        return await res.json()
+      }
+      lastError = new Error(`Upstream Giphy HTTP ${res.status}`)
+    } catch (err) {
+      lastError = err
+    }
+  }
+  throw lastError || new Error('All Giphy keys failed')
+}
+
 async function handleRequest(event) {
   const request = event.request
 
-  // Set CORS headers to allow requests from your domain
   const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://trollbox.xtzchad.xyz', // In production, replace with your domain
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   }
@@ -44,7 +76,7 @@ async function handleRequest(event) {
   // (strips arbitrary cache-busting query params or random paths)
   const cache = caches.default
   const cacheUrl = new URL(url.origin)
-  cacheUrl.pathname = '/'
+  cacheUrl.pathname = '/fetchgif'
   cacheUrl.searchParams.set('type', searchType)
   if (searchType === 'search' && query) {
     cacheUrl.searchParams.set('q', query.toLowerCase())
@@ -66,24 +98,8 @@ async function handleRequest(event) {
     })
   }
 
-  // Support either GIPHY_KEY or existing TENOR_KEY secret binding
-  const apiKey = typeof GIPHY_KEY !== 'undefined' ? GIPHY_KEY : TENOR_KEY
-
-  // Determine the Giphy v1 endpoint based on the search type
-  let giphyUrl = ''
-  if (searchType === 'search' && query) {
-    giphyUrl = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(query)}&limit=${limit}&rating=g`
-  } else {
-    giphyUrl = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(apiKey)}&limit=${limit}&rating=g`
-  }
-
   try {
-    // Fetch data from Giphy API
-    const giphyResponse = await fetch(giphyUrl)
-    if (!giphyResponse.ok) {
-      throw new Error(`Upstream Giphy error: ${giphyResponse.status}`)
-    }
-    const giphyData = await giphyResponse.json()
+    const giphyData = await fetchFromGiphy(searchType, query, limit)
     const items = Array.isArray(giphyData.data) ? giphyData.data : []
 
     // Map Giphy items into Tenor v2 (`results[].media_formats`) & v1 (`results[].media`)
@@ -143,7 +159,7 @@ async function handleRequest(event) {
     return response
   } catch (error) {
     // Return error with CORS headers
-    return new Response(JSON.stringify({ error: 'Failed to fetch GIFs' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch GIFs', details: error.message }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
