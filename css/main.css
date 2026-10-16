@@ -832,22 +832,22 @@ a {
 .picker-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 2px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-subtle);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.picker-header::-webkit-scrollbar {
-  display: none;
+  overflow: hidden;
 }
 
 .emoji-cat-btn {
-  padding: 5px 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 0;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   font-size: 16px;
+  text-align: center;
   cursor: pointer;
   opacity: 0.65;
   transition: all 0.15s ease;
@@ -862,16 +862,18 @@ a {
 .emoji-grid {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 4px;
   align-content: start;
 }
 
 .emoji-item {
   font-size: 20px;
-  padding: 5px;
+  padding: 5px 0;
+  min-width: 0;
   border-radius: 6px;
   border: none;
   background: transparent;
@@ -903,9 +905,10 @@ a {
 .gif-grid {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   align-content: start;
 }
