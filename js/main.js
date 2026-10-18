@@ -158,14 +158,15 @@
     if (aliasCache.has(address)) return aliasCache.get(address);
     aliasCache.set(address, shortAddr(address));
     try {
-      const res = await fetch(`https://api.tzkt.io/v1/accounts/${address}`);
+      const res = await fetch(`https://api.tzkt.io/v1/accounts/${encodeURIComponent(address)}`);
       if (res.ok) {
         const data = await res.json();
         const display = data && data.alias ? data.alias : shortAddr(address);
         aliasCache.set(address, display);
         saveAliases();
         // Update any rendered DOM nodes for this address
-        document.querySelectorAll(`[data-author-addr="${address}"]`).forEach(node => {
+        const safeSelectorAddr = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(address) : address.replace(/["\\]/g, '\\$&');
+        document.querySelectorAll(`[data-author-addr="${safeSelectorAddr}"]`).forEach(node => {
           node.textContent = display;
         });
         return display;
