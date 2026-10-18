@@ -399,6 +399,7 @@
     }
     dAppClient = new beacon.DAppClient({
       name: 'TezTrollBox',
+      network: { type: beacon.NetworkType.MAINNET, rpcUrl: RPC_URL },
       preferredNetwork: beacon.NetworkType.MAINNET
     });
 
@@ -446,18 +447,17 @@
     }
     try {
       if (activeAccount) {
-        await dAppClient.clearActiveAccount();
+        if (typeof dAppClient.disconnect === 'function') {
+          await dAppClient.disconnect();
+        } else {
+          await dAppClient.clearActiveAccount();
+        }
         activeAccount = null;
         updateWalletUI();
         showToast('Wallet disconnected.');
       } else {
-        const perms = await dAppClient.requestPermissions({
-          network: {
-            type: beacon.NetworkType.MAINNET,
-            rpcUrl: RPC_URL
-          }
-        });
-        activeAccount = perms.account || (await dAppClient.getActiveAccount());
+        const perms = await dAppClient.requestPermissions();
+        activeAccount = perms.account || (await dAppClient.getActiveAccount()) || (perms.address ? { address: perms.address } : null);
         updateWalletUI();
         showToast('Wallet connected!');
       }
