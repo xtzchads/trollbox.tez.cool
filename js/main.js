@@ -403,12 +403,10 @@
       preferredNetwork: beacon.NetworkType.MAINNET
     });
 
-    dAppClient.getActiveAccount().then(acc => {
-      if (acc) {
-        activeAccount = acc;
-        updateWalletUI();
-      }
-    }).catch(() => {});
+    dAppClient.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, acc => {
+      activeAccount = acc || null;
+      updateWalletUI();
+    });
   }
 
   function updateWalletUI() {
